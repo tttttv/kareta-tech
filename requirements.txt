@@ -1,0 +1,5 @@
+aiogram
+httpx
+pydantic
+python-dotenv
+pydantic_settings
