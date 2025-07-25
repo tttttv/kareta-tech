@@ -16,7 +16,7 @@ async def menu_requests(callback: types.CallbackQuery):
         await callback.message.edit_text("🔧 У вас нет заявок на ремонт.")
     else:
         await callback.message.edit_text("Выберите заявку:", reply_markup=repair_request_keyboard(requests))
-    await callback.edit_text()
+    await callback.answer()
 
 
 @router.callback_query(F.data.startswith("repair_req:"))
@@ -31,7 +31,7 @@ async def handle_repair_request_detail(callback: CallbackQuery):
     else:
         await callback.message.edit_text("Объект не найден.")
 
-    # await callback.edit_text()
+    await callback.answer()
 
 
 @router.callback_query(lambda c: c.data.startswith('set_repair_status'))
@@ -44,5 +44,5 @@ async def handle_set_status(callback: types.CallbackQuery):
     if result:
         await callback.message.edit_text("🚗 Статус обновлен.")
 
-    await callback.edit_text()
+    await callback.answer()
 

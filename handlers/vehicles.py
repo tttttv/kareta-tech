@@ -17,7 +17,7 @@ async def menu_vehicles(callback: types.CallbackQuery):
         await callback.message.edit_text("Выберите карету:", reply_markup=vehicle_keyboard(objects))
     else:
         await callback.message.edit_text("У вас нет доступных карет.")
-    await callback.edit_text()
+    await callback.answer()
 
 
 @router.callback_query(lambda c: c.data.startswith("select:"))
@@ -34,7 +34,7 @@ async def handle_vehicle_selection(callback: types.CallbackQuery):
     else:
         await callback.message.edit_text("Объект не найден.")
 
-    await callback.edit_text()
+    await callback.answer()
 
 
 @router.callback_query(lambda c: c.data.startswith(("lock:", "unlock:", "beep:")))
@@ -52,7 +52,7 @@ async def handle_vehicle_actions(callback: types.CallbackQuery):
         await vehicles.beep(username, vehicle_id)
         await callback.message.edit_text("🗑 Карета удалена.")
 
-    await callback.edit_text()
+    await callback.answer()
 
 
 @router.callback_query(lambda c: c.data.startswith('set_status'))
@@ -65,6 +65,6 @@ async def handle_set_status(callback: types.CallbackQuery):
     if result:
         await callback.message.edit_text("🚗 Статус обновлен.")
 
-    await callback.edit_text()
+    await callback.answer()
 
 
