@@ -1,23 +1,23 @@
-from aiogram import Router, types
+from aiogram import Router, types, F
 from services.api_client import ApiClient
-from keyboards.inline import object_action_keyboard
-from keyboards.inline import objects_keyboard
+from keyboards.inline import vehicle_action_keyboard
+from keyboards.inline import vehicle_keyboard
+from services import vehicles, repair_request
+from keyboards.utils.nav_keyboard import append_navigation_keyboard
 
 router = Router()
 
 
-@router.message()
-async def send_vehicle_list(message: types.Message):
-    "Получить список карет"
+@router.callback_query(F.data == "menu:vehicles")
+async def menu_vehicles(callback: types.CallbackQuery):
+    username = callback.from_user.username
+    objects = await vehicles.get_vehicles(username)
 
-    username = message.from_user.username
-    api_client = ApiClient(username)
-
-    objects = await api_client.get_vehicles()
     if objects:
-        await message.answer("Выберите карету:", reply_markup=objects_keyboard(objects))
+        await callback.message.edit_text("Выберите карету:", reply_markup=vehicle_keyboard(objects))
     else:
-        await message.answer("У вас нет доступных карет.")
+        await callback.message.edit_text("У вас нет доступных карет.")
+    await callback.edit_text()
 
 
 @router.callback_query(lambda c: c.data.startswith("select:"))
@@ -27,31 +27,44 @@ async def handle_vehicle_selection(callback: types.CallbackQuery):
     vehicle_id = callback.data.split(":")[1]
     username = callback.from_user.username
 
-    api_client = ApiClient(username)
+    result = await vehicles.get_vehicle_by_id(username, vehicle_id)
 
-    try:
-        obj = await api_client.get_vehicle_by_id(vehicle_id)
+    if result:
+        await callback.message.edit_text(result, reply_markup=vehicle_action_keyboard(vehicle_id))
+    else:
+        await callback.message.edit_text("Объект не найден.")
 
-        if obj:
-            text = (
-                f"Имя: {obj['name']}\n"
-                f"Цвет: {obj['color']}\n"
-                f"Пробег: {obj['mileage']}\n"
-                f"Вне геозоны: {obj['is_left_geozone']}\n"
-                f"Модель: {obj['model']['name']}\n"
-                f"Число мест: {obj['model']['seating_capacity']}\n"
-                f"IMEI: {obj['imei']}\n"
-                f"Статус: {obj['status']}\n"
-                f"Статус замка: {obj['is_locked']}\n"
-                f"Геозона: {obj['geozone']['name']}\n"
-                f"[📍 Открыть на карте]({obj['location_link']})"
-            )
-            await callback.message.answer(text, reply_markup=object_action_keyboard(vehicle_id))
-        else:
-            await callback.message.answer("Объект не найден.")
+    await callback.edit_text()
 
-    finally:
-        await api_client.close()
 
-    await callback.answer()
+@router.callback_query(lambda c: c.data.startswith(("lock:", "unlock:", "beep:")))
+async def handle_vehicle_actions(callback: types.CallbackQuery):
+    action, vehicle_id = callback.data.split(":")
+    username = callback.from_user.username
+
+    if action == "lock":
+        await vehicles.lock_vehicle(username, vehicle_id)
+        await callback.message.edit_text("🚗 Карета заблокирована.")
+    elif action == "unlock":
+        await vehicles.unlock_vehicle(username, vehicle_id)
+        await callback.message.edit_text("🚗 Карета разблокирована.")
+    elif action == "delete":
+        await vehicles.beep(username, vehicle_id)
+        await callback.message.edit_text("🗑 Карета удалена.")
+
+    await callback.edit_text()
+
+
+@router.callback_query(lambda c: c.data.startswith('set_status'))
+async def handle_set_status(callback: types.CallbackQuery):
+    "Изменить статус"
+    action, vehicle_id, status = callback.data.split(":")
+    username = callback.from_user.username
+
+    result = await repair_request.set_repair_status(username, vehicle_id, status)
+    if result:
+        await callback.message.edit_text("🚗 Статус обновлен.")
+
+    await callback.edit_text()
+
 

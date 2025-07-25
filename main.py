@@ -1,13 +1,10 @@
 from aiogram import Bot, Dispatcher
-from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.client.default import DefaultBotProperties
-from handlers import repair_requests
-
-
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import settings
-from handlers import start, vehicles
+from handlers import repair_requests
+from handlers import menu, vehicles
 
 
 async def main():
@@ -17,7 +14,7 @@ async def main():
     )
     dp = Dispatcher(storage=MemoryStorage())
 
-    dp.include_router(start.router)
+    dp.include_router(menu.router)
     dp.include_router(vehicles.router)
     dp.include_router(repair_requests.router)
 
