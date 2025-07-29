@@ -1,0 +1,13 @@
+services:
+  technic-telegram-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: technic_bot
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - ./src:/app/src
+      - ./bot.py:/app/bot.py
+    command: python bot.py
