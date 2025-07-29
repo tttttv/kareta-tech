@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     secret: str = Field(default='secret', json_schema_extra={'env': 'SECRET'})
 
     class Config:
-        env_file = ".env"
+        env_file = "../.env"
 
 
 settings = Settings()

@@ -2,7 +2,7 @@ from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from config import settings
+from src.config import settings
 from src.handlers import repair_requests, menu, vehicles
 
 from aiogram import Dispatcher

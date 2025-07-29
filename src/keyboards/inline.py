@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from enums import VehicleRequestStatus
-from enums import VehicleStatusEnum
+from src.enums import VehicleRequestStatus
+from src.enums import VehicleStatusEnum
 
 
 def vehicle_keyboard(objects):
