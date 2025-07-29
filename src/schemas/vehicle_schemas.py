@@ -19,11 +19,11 @@ class VehicleSchema(BaseModel):
     lock_type: str
     mileage: float
     is_left_geozone: bool
-    model: VehicleModelSchema
+    model: VehicleModelSchema | None
     imei: int
     status: str
     is_locked: bool
-    geozone: GeoZoneSchema
+    geozone: GeoZoneSchema | None
     last_location: dict
     is_active: bool
 
@@ -34,12 +34,12 @@ class VehicleSchema(BaseModel):
             f"Пробег: {self.mileage}\n"
             f"Вне геозоны: {self.is_left_geozone}\n"
             f"Модель: {self.model.name}\n"
-            f"Число мест: {self.model.seating_capacity}\n"
+            f"Число мест: {self.model.seating_capacity if self.model else ''}\n"
             f"IMEI: {self.imei}\n"
             f"Статус: {self.status}\n"
             f"Статус замка: {self.is_locked}\n"
             f"Тип замка: {self.lock_type}\n"
-            f"Геозона: {self.geozone.name}\n"
+            f"Геозона: {self.geozone.name if self.geozone else ''}\n"
             f"Активный: {self.is_active}\n"
         )
         return text

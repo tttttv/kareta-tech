@@ -22,7 +22,10 @@ async def menu_vehicles(callback: types.CallbackQuery):
     if objects:
         await callback.message.edit_text("Выберите карету:", reply_markup=vehicle_keyboard(objects))
     else:
-        await callback.message.edit_text("У вас нет доступных карет.")
+        await callback.message.edit_text(
+            "У вас нет доступных карет.",
+            reply_markup=main_menu_keyboard()
+        )
     await callback.answer()
 
 

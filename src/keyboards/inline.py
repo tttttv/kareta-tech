@@ -14,13 +14,18 @@ def vehicle_keyboard(objects):
     return kb
 
 
-def vehicle_action_keyboard(vehicle_id):
+def vehicle_action_keyboard(vehicle_id, is_locked: bool) -> InlineKeyboardMarkup:
+    lock_button = (
+        InlineKeyboardButton(text="🔓 Разблокировать", callback_data=f"unlock:{vehicle_id}")
+        if is_locked
+        else InlineKeyboardButton(text="🔒 Заблокировать", callback_data=f"lock:{vehicle_id}")
+    )
+
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="🔒 Заблокировать", callback_data=f"lock:{vehicle_id}"),
-                InlineKeyboardButton(text="🔓 Разблокировать", callback_data=f"unlock:{vehicle_id}"),
-                InlineKeyboardButton(text='Посмотреть на карте', callback_data=f"location:{vehicle_id}")
+                lock_button,
+                InlineKeyboardButton(text="На карте", callback_data=f"location:{vehicle_id}")
             ],
             [
                 InlineKeyboardButton(text="📣 Сигнал", callback_data=f"beep:{vehicle_id}")
@@ -66,6 +71,7 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(text="🚗 Кареты", callback_data="menu:vehicles"),
             InlineKeyboardButton(text="🔧 Заявки", callback_data="menu:requests"),
+            InlineKeyboardButton(text="Найти по айди", callback_data="find_vehicle"),
         ]
     ])
     return kb

@@ -40,6 +40,9 @@ class ApiClient:
                 if response.content_type == 'application/json':
                     return await response.json()
                 return await response.text()
+        except aiohttp.ClientResponseError as e:
+            if e.status == 404:
+                return None
         finally:
             await self.close()
 

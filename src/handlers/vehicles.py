@@ -5,8 +5,11 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from src.keyboards.inline import vehicle_action_keyboard
 from src.services import vehicles
 from src.keyboards.utils.nav_keyboard import append_navigation_keyboard
+from src.keyboards.inline import main_menu_keyboard
 from aiogram.types import LinkPreviewOptions
 from contextlib import suppress
+from aiogram.fsm.context import FSMContext
+from src.states.states import SearchVehicleStates
 
 router = Router()
 
@@ -21,14 +24,17 @@ async def handle_vehicle_selection(callback: types.CallbackQuery):
     result = await vehicles.get_vehicle_by_id(username, vehicle_id)
 
     if result:
-        await callback.message.edit_text(result)
+        kb = vehicle_action_keyboard(vehicle_id, result.is_locked)
+        kb_with_nav = append_navigation_keyboard(kb)
+        await callback.message.edit_text(
+            result.to_message(),
+            reply_markup=kb_with_nav
+        )
     else:
-        await callback.message.edit_text("Объект не найден.")
-
-    kb = vehicle_action_keyboard(vehicle_id)
-    kb_with_nav = append_navigation_keyboard(kb)
-
-    await callback.message.edit_text(result, reply_markup=kb_with_nav)
+        await callback.message.edit_text(
+            "Объект не найден.",
+            reply_markup=main_menu_keyboard()
+        )
 
     await callback.answer()
 
@@ -38,8 +44,10 @@ async def handle_vehicle_actions(callback: types.CallbackQuery):
     action, vehicle_id = callback.data.split(":")
     username = callback.from_user.username
 
+    is_locked = False
     if action == "lock":
         await vehicles.lock_vehicle(username, vehicle_id)
+        is_locked = True
         text = "🚗 Карета заблокирована."
     elif action == "unlock":
         await vehicles.unlock_vehicle(username, vehicle_id)
@@ -50,7 +58,7 @@ async def handle_vehicle_actions(callback: types.CallbackQuery):
     else:
         text = 'Неизвестная команда.'
 
-    kb = vehicle_action_keyboard(vehicle_id)
+    kb = vehicle_action_keyboard(vehicle_id, is_locked)
     kb_with_nav = append_navigation_keyboard(kb)
 
     await callback.message.edit_text(text, reply_markup=kb_with_nav)
@@ -70,7 +78,7 @@ async def handle_set_vehicle_status(callback: types.CallbackQuery):
 
     updated_vehicle =await vehicles.get_vehicle_by_id(username, vehicle_id)
     with suppress(TelegramBadRequest):
-        kb = vehicle_action_keyboard(vehicle_id)
+        kb = vehicle_action_keyboard(vehicle_id, result.is_locked)
         kb_with_nav = append_navigation_keyboard(kb)
         await callback.message.edit_text(updated_vehicle, reply_markup=kb_with_nav)
 
@@ -102,7 +110,7 @@ async def handle_vehicle_location(callback: types.CallbackQuery):
 
     kb = vehicle_action_keyboard(vehicle_id)
     kb_with_nav = append_navigation_keyboard(kb)
-    await callback.message.edit_text(
+    await callback.message.answer(
         "Выберите действие:",
         reply_markup=kb_with_nav
     )
@@ -124,10 +132,42 @@ async def handle_vehicle_by_request(callback: types.CallbackQuery):
     else:
         await callback.message.edit_text("Объект не найден.")
 
-    kb = vehicle_action_keyboard(result.id)
+    kb = vehicle_action_keyboard(result.id, result.is_locked)
     kb_with_nav = append_navigation_keyboard(kb)
 
     await callback.message.edit_text(result.to_message(), reply_markup=kb_with_nav)
 
     await callback.answer()
 
+
+@router.callback_query(F.data == "find_vehicle")
+async def ask_for_vehicle_id(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.answer("Введите ID кареты:")
+    await state.set_state(SearchVehicleStates.waiting_for_vehicle_id)
+    await callback.answer()
+
+
+@router.message(SearchVehicleStates.waiting_for_vehicle_id)
+async def process_vehicle_id_input(message: types.Message, state: FSMContext):
+    if not message.text.isdigit():
+        await message.answer("❗ Пожалуйста, введите число.")
+        return
+
+    username = message.from_user.username
+
+    vehicle_id = int(message.text)
+    await state.clear()
+
+    vehicle_info = await vehicles.get_vehicle_by_id(username, vehicle_id)
+
+    if vehicle_info:
+        kb = vehicle_action_keyboard(vehicle_id, vehicle_info.is_locked)
+        kb_with_nav = append_navigation_keyboard(kb)
+        await message.answer(
+            f"🚗 Карета найдена:\n{vehicle_info.to_message()}",
+            reply_markup=kb_with_nav
+        )
+    else:
+        await message.answer(
+            "❌ Карета с таким ID не найдена.",
+            reply_markup=main_menu_keyboard())

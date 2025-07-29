@@ -1,5 +1,5 @@
 from src.services.api_client import ApiClient
-from src.schemas.repir_request_schemas import RepairRequestSchema
+from src.schemas.repair_request_schemas import RepairRequestSchema
 
 
 async def get_repair_request(username):
@@ -10,7 +10,6 @@ async def get_repair_request(username):
 async def get_repair_request_by_id(username, req_id):
     async with ApiClient(username) as client:
         req = await client.get_repair_request_by_id(req_id)
-        print(req)
 
         if not req:
             return

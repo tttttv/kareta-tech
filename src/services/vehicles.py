@@ -15,9 +15,8 @@ async def get_vehicle_by_id(username, vehicle_id):
     async with ApiClient(username) as client:
         obj = await client.get_vehicle_by_id(vehicle_id)
         if obj:
-            vehicle = VehicleSchema(**obj)
+            return VehicleSchema(**obj)
 
-            return vehicle.to_message()
         return None
 
 async def lock_vehicle(username, vehicle_id):
@@ -40,7 +39,9 @@ async def beep(username, vehicle_id):
 
 async def set_status(username, vehicle_id, status):
     async with ApiClient(username) as client:
-        await client.set_vehicle_status(vehicle_id, status)
+        result = await client.set_vehicle_status(vehicle_id, status)
+        res_schema = VehicleSchema(**result)
+        return res_schema
 
 
 async def get_vehicle_by_request_id(username, request_id):
