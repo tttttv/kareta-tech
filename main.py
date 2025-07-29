@@ -1,10 +1,11 @@
-from aiogram import Bot, Dispatcher
+from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import settings
-from handlers import repair_requests
-from handlers import menu, vehicles
+from src.handlers import repair_requests, menu, vehicles
+
+from aiogram import Dispatcher
 
 
 async def main():

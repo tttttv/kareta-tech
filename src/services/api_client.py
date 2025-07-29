@@ -1,5 +1,6 @@
 import aiohttp
 from config import settings
+import backoff
 
 
 class ApiClient:
@@ -27,6 +28,7 @@ class ApiClient:
         if self.session:
             await self.session.close()
 
+    @backoff.on_exception(backoff.expo, aiohttp.ClientError, max_time=5)
     async def request(self, method, path, *, data=None, params=None):
         if self.session is None:
             await self.initialize()
@@ -46,20 +48,28 @@ class ApiClient:
 
     async def get_vehicle_by_id(self, vehicle_id):
         path = f'/vehicles/{vehicle_id}'
+        return await self.request("GET", path)
+
+    async def get_vehicle_by_request_id(self, request_id):
+        path = f'/repair-requests/{request_id}/vehicle'
 
         return await self.request("GET", path)
 
     async def lock_vehicle(self, vehicle_id):
         path = f'/vehicles/{vehicle_id}/lock'
-        return await self.request("POST", path, data=self.username_payload)
+        return await self.request("POST", path)
 
     async def unlock_vehicle(self, vehicle_id):
         path = f'/vehicles/{vehicle_id}/unlock'
-        return await self.request("POST", path, data=self.username_payload)
+        return await self.request("POST", path)
 
     async def beep_vehicle(self, vehicle_id):
         path = f'/vehicles/{vehicle_id}/beep'
-        return await self.request("POST", path, data=self.username_payload)
+        return await self.request("POST", path)
+
+    async def set_vehicle_status(self, vehicle_id, status):
+        path = f'/vehicles/{vehicle_id}/status/{status}'
+        return await self.request("POST", path)
 
     async def get_repair_requests(self):
         path = f'/repair-requests'
@@ -70,5 +80,5 @@ class ApiClient:
         return await self.request("GET", path)
 
     async def set_repair_status(self, request_id, status):
-        path = f'repair-requests/status/{request_id}/{status}'
-        return await self.request("POST", path)
+        path = f'/repair-requests/status/{request_id}'
+        return await self.request("POST", path, data={"status": status})

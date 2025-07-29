@@ -1,4 +1,5 @@
-from services.api_client import ApiClient
+from src.services.api_client import ApiClient
+from src.schemas.repir_request_schemas import RepairRequestSchema
 
 
 async def get_repair_request(username):
@@ -9,19 +10,14 @@ async def get_repair_request(username):
 async def get_repair_request_by_id(username, req_id):
     async with ApiClient(username) as client:
         req = await client.get_repair_request_by_id(req_id)
+        print(req)
 
         if not req:
             return
 
-        text = (
-            f"🪛 *Заявка #{req['id']}*\n"
-            f"*ТС:* {req['vehicle']['name']}\n"
-            f"*Описание:* {req['description']}\n"
-            f"*Статус:* {req['status']}\n"
-            f"*Тип:* {req['request_type']}\n"
-        )
+        req_model = RepairRequestSchema(**req)
 
-        return text
+        return req_model.to_message()
 
 async def set_repair_status(username, repair_id, status):
     async with ApiClient(username) as client:
