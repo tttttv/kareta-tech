@@ -4,7 +4,6 @@ from aiogram.exceptions import TelegramBadRequest
 
 from src.keyboards.inline import repair_request_action_keyboard
 from src.services import repair_request
-from src.keyboards.utils.nav_keyboard import append_navigation_keyboard
 from contextlib import suppress
 
 router = Router()
@@ -21,9 +20,8 @@ async def handle_repair_request_detail(callback: CallbackQuery):
         text = "Объект не найден."
 
     kb = repair_request_action_keyboard(req_id)
-    kb_with_nav = append_navigation_keyboard(kb)
-
-    await callback.message.edit_text(text, reply_markup=kb_with_nav)
+    with suppress(TelegramBadRequest):
+        await callback.message.edit_text(text, reply_markup=kb)
 
     await callback.answer()
 
@@ -41,8 +39,7 @@ async def handle_set_repair_request_status(callback: types.CallbackQuery):
     updated_request = await repair_request.get_repair_request_by_id(username, rep_id)
     with suppress(TelegramBadRequest):
         kb = repair_request_action_keyboard(rep_id)
-        kb_with_nav = append_navigation_keyboard(kb)
-        await callback.message.edit_text(updated_request, reply_markup=kb_with_nav)
+        await callback.message.edit_text(updated_request, reply_markup=kb)
 
     await callback.answer()
 

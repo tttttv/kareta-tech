@@ -1,6 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from src.enums import VehicleRequestStatus
 from src.enums import VehicleStatusEnum
+from src.keyboards.utils.nav_keyboard import MENU_BUTTON
 
 
 def vehicle_keyboard(objects):
@@ -9,7 +10,7 @@ def vehicle_keyboard(objects):
         inline_keyboard=[
             [InlineKeyboardButton(text=obj['name'], callback_data=f"vehicle:{obj['id']}")]
             for obj in objects
-        ]
+        ] + [MENU_BUTTON]
     )
     return kb
 
@@ -38,7 +39,7 @@ def vehicle_action_keyboard(vehicle_id, is_locked: bool) -> InlineKeyboardMarkup
                 InlineKeyboardButton(text="🚫 Донор", callback_data=f"set_status:{vehicle_id}:{VehicleStatusEnum.UNAVAILABLE_DONOR.value}"),
                 InlineKeyboardButton(text="🚫 Обслуж.", callback_data=f"set_status:{vehicle_id}:{VehicleStatusEnum.UNAVAILABLE_IN_MAINTENANCE.value}")
             ]
-        ]
+        ] + [MENU_BUTTON]
     )
     return kb
 
@@ -49,7 +50,7 @@ def repair_request_keyboard(objects):
         inline_keyboard=[
             [InlineKeyboardButton(text=f'Звявка №{obj["id"]}', callback_data=f"repair_req:{obj['id']}")]
             for obj in objects
-        ]
+        ] + [MENU_BUTTON]
     )
     return kb
 
@@ -62,7 +63,7 @@ def repair_request_action_keyboard(rep_id) -> InlineKeyboardMarkup:
                 [InlineKeyboardButton(text="🛠 В ремонт", callback_data=f"set_repair_status:{rep_id}:{VehicleRequestStatus.IN_PROGRESS.value}")],
                 [InlineKeyboardButton(text="✅ Завершен", callback_data=f"set_repair_status:{rep_id}:{VehicleRequestStatus.COMPLETED.value}")],
                 [InlineKeyboardButton(text="К карете", callback_data=f"vehicle_by_request:{rep_id}")],
-        ]
+        ] + [MENU_BUTTON]
     )
 
 

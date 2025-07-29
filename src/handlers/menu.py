@@ -6,6 +6,7 @@ from src.keyboards.inline import vehicle_keyboard, repair_request_keyboard
 
 router = Router()
 
+
 @router.message(F.text == 'start')
 @router.message(Command("start"))
 async def start_menu(message: types.Message):
@@ -13,6 +14,16 @@ async def start_menu(message: types.Message):
         "Выберите, что хотите сделать:",
         reply_markup=main_menu_keyboard()
     )
+
+
+@router.callback_query(F.data == "to_start")
+async def return_to_start_menu(callback: types.CallbackQuery):
+    await callback.message.edit_text(
+        "Выберите, что хотите сделать:",
+        reply_markup=main_menu_keyboard()
+    )
+
+
 
 @router.callback_query(F.data == "menu:vehicles")
 async def menu_vehicles(callback: types.CallbackQuery):

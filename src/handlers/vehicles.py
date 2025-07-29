@@ -4,7 +4,6 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from src.keyboards.inline import vehicle_action_keyboard
 from src.services import vehicles
-from src.keyboards.utils.nav_keyboard import append_navigation_keyboard
 from src.keyboards.inline import main_menu_keyboard
 from aiogram.types import LinkPreviewOptions
 from contextlib import suppress
@@ -25,10 +24,9 @@ async def handle_vehicle_selection(callback: types.CallbackQuery):
 
     if result:
         kb = vehicle_action_keyboard(vehicle_id, result.is_locked)
-        kb_with_nav = append_navigation_keyboard(kb)
         await callback.message.edit_text(
             result.to_message(),
-            reply_markup=kb_with_nav
+            reply_markup=kb
         )
     else:
         await callback.message.edit_text(
@@ -46,22 +44,22 @@ async def handle_vehicle_actions(callback: types.CallbackQuery):
 
     is_locked = False
     if action == "lock":
-        await vehicles.lock_vehicle(username, vehicle_id)
+        vehicle =await vehicles.lock_vehicle(username, vehicle_id)
         is_locked = True
         text = "🚗 Карета заблокирована."
     elif action == "unlock":
-        await vehicles.unlock_vehicle(username, vehicle_id)
+        vehicle = await vehicles.unlock_vehicle(username, vehicle_id)
         text = "🚗 Карета разблокирована."
     elif action == "beep":
-        await vehicles.beep(username, vehicle_id)
+        vehicle = await vehicles.beep(username, vehicle_id)
         text ="Сигнал отправлен."
     else:
+        vehicle = None
         text = 'Неизвестная команда.'
-
-    kb = vehicle_action_keyboard(vehicle_id, is_locked)
-    kb_with_nav = append_navigation_keyboard(kb)
-
-    await callback.message.edit_text(text, reply_markup=kb_with_nav)
+    with suppress(TelegramBadRequest):
+        kb = vehicle_action_keyboard(vehicle_id, is_locked)
+        answer = text + "\n\n" + vehicle.to_message() if vehicle else text
+        await callback.message.edit_text(answer, reply_markup=kb)
     await callback.answer()
 
 
@@ -76,11 +74,10 @@ async def handle_set_vehicle_status(callback: types.CallbackQuery):
     if result:
         await callback.message.edit_text("🚗 Статус обновлен.")
 
-    updated_vehicle =await vehicles.get_vehicle_by_id(username, vehicle_id)
+    updated_vehicle = await vehicles.get_vehicle_by_id(username, vehicle_id)
     with suppress(TelegramBadRequest):
         kb = vehicle_action_keyboard(vehicle_id, result.is_locked)
-        kb_with_nav = append_navigation_keyboard(kb)
-        await callback.message.edit_text(updated_vehicle, reply_markup=kb_with_nav)
+        await callback.message.edit_text(updated_vehicle.to_message(), reply_markup=kb)
 
     await callback.answer()
 
@@ -92,7 +89,7 @@ async def handle_vehicle_location(callback: types.CallbackQuery):
 
     username = callback.from_user.username
 
-    location_url = await vehicles.get_vehicle_location(username, vehicle_id)
+    location_url, vehicle = await vehicles.get_vehicle_with_location(username, vehicle_id)
     # Создаем кнопку с URL
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🗺 Открыть в браузере", url=location_url)]
@@ -108,11 +105,10 @@ async def handle_vehicle_location(callback: types.CallbackQuery):
         )
     )
 
-    kb = vehicle_action_keyboard(vehicle_id)
-    kb_with_nav = append_navigation_keyboard(kb)
+    kb = vehicle_action_keyboard(vehicle_id, vehicle.is_locked)
     await callback.message.answer(
         "Выберите действие:",
-        reply_markup=kb_with_nav
+        reply_markup=kb
     )
 
     await callback.answer()
@@ -133,9 +129,8 @@ async def handle_vehicle_by_request(callback: types.CallbackQuery):
         await callback.message.edit_text("Объект не найден.")
 
     kb = vehicle_action_keyboard(result.id, result.is_locked)
-    kb_with_nav = append_navigation_keyboard(kb)
 
-    await callback.message.edit_text(result.to_message(), reply_markup=kb_with_nav)
+    await callback.message.edit_text(result.to_message(), reply_markup=kb)
 
     await callback.answer()
 
@@ -162,10 +157,9 @@ async def process_vehicle_id_input(message: types.Message, state: FSMContext):
 
     if vehicle_info:
         kb = vehicle_action_keyboard(vehicle_id, vehicle_info.is_locked)
-        kb_with_nav = append_navigation_keyboard(kb)
         await message.answer(
             f"🚗 Карета найдена:\n{vehicle_info.to_message()}",
-            reply_markup=kb_with_nav
+            reply_markup=kb
         )
     else:
         await message.answer(

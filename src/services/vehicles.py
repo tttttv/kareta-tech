@@ -22,20 +22,21 @@ async def get_vehicle_by_id(username, vehicle_id):
 async def lock_vehicle(username, vehicle_id):
     "Заблокировать карету"
     async with ApiClient(username) as client:
-        await client.lock_vehicle(vehicle_id)
-    return True
+        result = await client.lock_vehicle(vehicle_id)
+    return VehicleSchema(**result)
 
 async def unlock_vehicle(username, vehicle_id):
     "Разблокировать карету"
     async with ApiClient(username) as client:
-        await client.unlock_vehicle(vehicle_id)
-    return True
+        result = await client.unlock_vehicle(vehicle_id)
+    return VehicleSchema(**result)
 
 async def beep(username, vehicle_id):
     "Подать звуковой сигнал"
     async with ApiClient(username) as client:
-        await client.beep_vehicle(vehicle_id)
-    return True
+        result =await client.beep_vehicle(vehicle_id)
+    return VehicleSchema(**result)
+
 
 async def set_status(username, vehicle_id, status):
     async with ApiClient(username) as client:
@@ -54,13 +55,14 @@ async def get_vehicle_by_request_id(username, request_id):
         return None
 
 
-async def get_vehicle_location(username, vehicle_id):
+async def get_vehicle_with_location(username, vehicle_id):
     async with ApiClient(username) as client:
-        vehicle = await client.get_vehicle_by_id(vehicle_id)
-        location = vehicle['last_location']
+        vehicle_request = await client.get_vehicle_by_id(vehicle_id)
+        vehicle = VehicleSchema(**vehicle_request)
+        location = vehicle.last_location
 
         longitude = location['lon']
         latitude = location['lat']
         zoom = 16
         url = f"https://yandex.ru/maps/?ll={longitude},{latitude}&pt={longitude},{latitude}&z={zoom}"
-        return url
+        return url, vehicle
