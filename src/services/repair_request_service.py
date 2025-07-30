@@ -16,10 +16,24 @@ async def get_repair_request_by_id(username, req_id):
 
         req_model = RepairRequestSchema(**req)
 
-        return req_model.to_message()
+        return req_model
 
 async def set_repair_status(username, repair_id, status):
     async with ApiClient(username) as client:
         await client.set_repair_status(repair_id, status)
 
     return True
+
+
+async def update_request_and_vehicle_status(
+        username,
+        request_id,
+        request_status,
+        vehicle_status
+):
+    async with ApiClient(username) as client:
+        return await client.update_request_and_vehicle_status(
+            request_id,
+            request_status,
+            vehicle_status
+        )

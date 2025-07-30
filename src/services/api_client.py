@@ -85,3 +85,12 @@ class ApiClient:
     async def set_repair_status(self, request_id, status):
         path = f'/repair-requests/status/{request_id}'
         return await self.request("POST", path, data={"status": status})
+
+    async def update_request_and_vehicle_status(self, request_id, request_status, vehicle_status):
+        path = f'/repair-requests/vehicle-request-status/{request_id}'
+        updated_vehicle = await self.request(
+            "PUT",
+            path,
+            data={"vehicle_status": vehicle_status, "repair_status": request_status}
+        )
+        return updated_vehicle

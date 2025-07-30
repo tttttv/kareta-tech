@@ -2,6 +2,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from src.enums import VehicleRequestStatus
 from src.enums import VehicleStatusEnum
 from src.keyboards.utils.nav_keyboard import MENU_BUTTON
+from src.enums import VehicleStatusEnum
 
 
 def vehicle_keyboard(objects):
@@ -56,15 +57,46 @@ def repair_request_keyboard(objects):
 
 
 
-def repair_request_action_keyboard(rep_id) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=
-            [
-                [InlineKeyboardButton(text="🛠 В ремонт", callback_data=f"set_repair_status:{rep_id}:{VehicleRequestStatus.IN_PROGRESS.value}")],
-                [InlineKeyboardButton(text="✅ Завершен", callback_data=f"set_repair_status:{rep_id}:{VehicleRequestStatus.COMPLETED.value}")],
-                [InlineKeyboardButton(text="К карете", callback_data=f"vehicle_by_request:{rep_id}")],
-        ] + [MENU_BUTTON]
-    )
+def repair_request_action_keyboard(request_status, rep_id) -> InlineKeyboardMarkup:
+    buttons = []
+
+    if request_status == VehicleRequestStatus.IN_PROGRESS:
+        buttons.append(
+            InlineKeyboardButton(
+                text="✅ Завершен",
+                callback_data=f"set_repair_status:{rep_id}:{VehicleRequestStatus.COMPLETED.value}"
+            )
+        )
+    else:
+        buttons.append(
+            InlineKeyboardButton(
+                text="🛠 В ремонт",
+                callback_data=f"set_repair_status:{rep_id}:{VehicleRequestStatus.IN_PROGRESS.value}"
+            )
+        )
+
+    buttons_markup = [[button] for button in buttons]
+    buttons_markup.append([
+        InlineKeyboardButton(text="К карете", callback_data=f"vehicle_by_request:{rep_id}")
+    ])
+    buttons_markup.append(MENU_BUTTON)
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons_markup)
+
+
+def vehicle_status_keyboard(rep_id: int, request_status: VehicleRequestStatus) -> InlineKeyboardMarkup:
+    statuses = [
+        (VehicleStatusEnum.UNAVAILABLE_IN_SERVICE, "🔧 Ремонт"),
+        (VehicleStatusEnum.UNAVAILABLE_IN_SERVICE, "🩸 Донор"),
+        (VehicleStatusEnum.UNAVAILABLE_IN_MAINTENANCE, "🛠 Обслуживание"),
+    ]
+    buttons = [
+        InlineKeyboardButton(
+            text=label,
+            callback_data=f"set_vehicle_status:{rep_id}:{request_status.value}:{status.value}"
+        ) for status, label in statuses
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=[[b] for b in buttons] + [MENU_BUTTON])
 
 
 def main_menu_keyboard() -> InlineKeyboardMarkup:

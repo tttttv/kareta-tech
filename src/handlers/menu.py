@@ -1,7 +1,7 @@
 from aiogram import Router, types, F
 from aiogram.filters import Command
 from src.keyboards.inline import main_menu_keyboard
-from src.services import repair_request, vehicles
+from src.services import repair_request_service, vehicles_service
 from src.keyboards.inline import vehicle_keyboard, repair_request_keyboard
 
 router = Router()
@@ -28,7 +28,7 @@ async def return_to_start_menu(callback: types.CallbackQuery):
 @router.callback_query(F.data == "menu:vehicles")
 async def menu_vehicles(callback: types.CallbackQuery):
     username = callback.from_user.username
-    objects = await vehicles.get_vehicles(username)
+    objects = await vehicles_service.get_vehicles(username)
 
     if objects:
         await callback.message.edit_text("Выберите карету:", reply_markup=vehicle_keyboard(objects))
@@ -43,7 +43,7 @@ async def menu_vehicles(callback: types.CallbackQuery):
 @router.callback_query(F.data == "menu:requests")
 async def menu_requests(callback: types.CallbackQuery):
     username = callback.from_user.username
-    requests = await repair_request.get_repair_request(username)
+    requests = await repair_request_service.get_repair_request(username)
 
     if not requests:
         await callback.message.edit_text("🔧 У вас нет заявок на ремонт.")

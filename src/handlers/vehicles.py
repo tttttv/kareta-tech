@@ -3,7 +3,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from src.keyboards.inline import vehicle_action_keyboard
-from src.services import vehicles
+from src.services import vehicles_service
 from src.keyboards.inline import main_menu_keyboard
 from aiogram.types import LinkPreviewOptions
 from contextlib import suppress
@@ -20,7 +20,7 @@ async def handle_vehicle_selection(callback: types.CallbackQuery):
     vehicle_id = callback.data.split(":")[1]
     username = callback.from_user.username
 
-    result = await vehicles.get_vehicle_by_id(username, vehicle_id)
+    result = await vehicles_service.get_vehicle_by_id(username, vehicle_id)
 
     if result:
         kb = vehicle_action_keyboard(vehicle_id, result.is_locked)
@@ -44,14 +44,14 @@ async def handle_vehicle_actions(callback: types.CallbackQuery):
 
     is_locked = False
     if action == "lock":
-        vehicle =await vehicles.lock_vehicle(username, vehicle_id)
+        vehicle =await vehicles_service.lock_vehicle(username, vehicle_id)
         is_locked = True
         text = "🚗 Карета заблокирована."
     elif action == "unlock":
-        vehicle = await vehicles.unlock_vehicle(username, vehicle_id)
+        vehicle = await vehicles_service.unlock_vehicle(username, vehicle_id)
         text = "🚗 Карета разблокирована."
     elif action == "beep":
-        vehicle = await vehicles.beep(username, vehicle_id)
+        vehicle = await vehicles_service.beep(username, vehicle_id)
         text ="Сигнал отправлен."
     else:
         vehicle = None
@@ -70,11 +70,11 @@ async def handle_set_vehicle_status(callback: types.CallbackQuery):
 
     username = callback.from_user.username
 
-    result = await vehicles.set_status(username, vehicle_id, status)
+    result = await vehicles_service.set_status(username, vehicle_id, status)
     if result:
         await callback.message.edit_text("🚗 Статус обновлен.")
 
-    updated_vehicle = await vehicles.get_vehicle_by_id(username, vehicle_id)
+    updated_vehicle = await vehicles_service.get_vehicle_by_id(username, vehicle_id)
     with suppress(TelegramBadRequest):
         kb = vehicle_action_keyboard(vehicle_id, result.is_locked)
         await callback.message.edit_text(updated_vehicle.to_message(), reply_markup=kb)
@@ -89,7 +89,7 @@ async def handle_vehicle_location(callback: types.CallbackQuery):
 
     username = callback.from_user.username
 
-    location_url, vehicle = await vehicles.get_vehicle_with_location(username, vehicle_id)
+    location_url, vehicle = await vehicles_service.get_vehicle_with_location(username, vehicle_id)
     # Создаем кнопку с URL
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🗺 Открыть в браузере", url=location_url)]
@@ -121,7 +121,7 @@ async def handle_vehicle_by_request(callback: types.CallbackQuery):
     request_id = callback.data.split(":")[1]
     username = callback.from_user.username
 
-    result = await vehicles.get_vehicle_by_request_id(username, request_id)
+    result = await vehicles_service.get_vehicle_by_request_id(username, request_id)
 
     if result:
         await callback.message.edit_text(result.to_message())
@@ -153,7 +153,7 @@ async def process_vehicle_id_input(message: types.Message, state: FSMContext):
     vehicle_id = int(message.text)
     await state.clear()
 
-    vehicle_info = await vehicles.get_vehicle_by_id(username, vehicle_id)
+    vehicle_info = await vehicles_service.get_vehicle_by_id(username, vehicle_id)
 
     if vehicle_info:
         kb = vehicle_action_keyboard(vehicle_id, vehicle_info.is_locked)

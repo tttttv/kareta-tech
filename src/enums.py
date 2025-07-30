@@ -4,6 +4,7 @@ from enum import Enum
 class VehicleRequestStatus(str, Enum):
     IN_PROGRESS = "IN_PROGRES"
     COMPLETED = "COMPLETED"
+    WAITING = "WAITING"
 
 
 class VehicleStatusEnum(str, Enum):
