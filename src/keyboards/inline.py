@@ -31,14 +31,6 @@ def vehicle_action_keyboard(vehicle_id, is_locked: bool) -> InlineKeyboardMarkup
             ],
             [
                 InlineKeyboardButton(text="📣 Сигнал", callback_data=f"beep:{vehicle_id}")
-            ],
-            [
-                InlineKeyboardButton(text="✅ Доступен", callback_data=f"set_status:{vehicle_id}:{VehicleStatusEnum.AVAILABLE.value}"),
-                InlineKeyboardButton(text="🚫 Ремонт", callback_data=f"set_status:{vehicle_id}:{VehicleStatusEnum.UNAVAILABLE_IN_SERVICE.value}")
-            ],
-            [
-                InlineKeyboardButton(text="🚫 Донор", callback_data=f"set_status:{vehicle_id}:{VehicleStatusEnum.UNAVAILABLE_DONOR.value}"),
-                InlineKeyboardButton(text="🚫 Обслуж.", callback_data=f"set_status:{vehicle_id}:{VehicleStatusEnum.UNAVAILABLE_IN_MAINTENANCE.value}")
             ]
         ] + [MENU_BUTTON]
     )

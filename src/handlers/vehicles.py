@@ -63,25 +63,6 @@ async def handle_vehicle_actions(callback: types.CallbackQuery):
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith('set_status'))
-async def handle_set_vehicle_status(callback: types.CallbackQuery):
-    "Изменить статус"
-    action, vehicle_id, status = callback.data.split(":")
-
-    username = callback.from_user.username
-
-    result = await vehicles_service.set_status(username, vehicle_id, status)
-    if result:
-        await callback.message.edit_text("🚗 Статус обновлен.")
-
-    updated_vehicle = await vehicles_service.get_vehicle_by_id(username, vehicle_id)
-    with suppress(TelegramBadRequest):
-        kb = vehicle_action_keyboard(vehicle_id, result.is_locked)
-        await callback.message.edit_text(updated_vehicle.to_message(), reply_markup=kb)
-
-    await callback.answer()
-
-
 @router.callback_query(F.data.startswith('location'))
 async def handle_vehicle_location(callback: types.CallbackQuery):
     "Изменить статус"
