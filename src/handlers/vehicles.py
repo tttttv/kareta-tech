@@ -1,14 +1,15 @@
-from aiogram import Router, types, F
-from aiogram.exceptions import TelegramBadRequest
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+import asyncio
 
+from aiogram import Router, types, F
+from aiogram.fsm.context import FSMContext
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import LinkPreviewOptions
+
+from src.keyboards.inline import main_menu_keyboard
 from src.keyboards.inline import vehicle_action_keyboard
 from src.services import vehicles_service
-from src.keyboards.inline import main_menu_keyboard
-from aiogram.types import LinkPreviewOptions
-from contextlib import suppress
-from aiogram.fsm.context import FSMContext
 from src.states.states import SearchVehicleStates
+from src.utils.animation import show_loading_animation
 
 router = Router()
 
@@ -38,29 +39,36 @@ async def handle_vehicle_selection(callback: types.CallbackQuery):
 
 
 @router.callback_query(F.data.startswith(("lock:", "unlock:", "beep:")))
-async def handle_vehicle_actions(callback: types.CallbackQuery):
+async def handle_vehicle_action(callback: types.CallbackQuery):
     action, vehicle_id = callback.data.split(":")
+    vehicle_id = int(vehicle_id)
     username = callback.from_user.username
 
-    is_locked = False
+    msg = await callback.message.edit_text("🕐 Выполняется команда...", reply_markup=None)
+    animation_task = asyncio.create_task(show_loading_animation(msg, f"Выполняется {action.upper()}"))
+
+    await callback.message.edit_text(
+        f"⏳ Выполняется команда {action.upper()}...",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⏳", callback_data="wait")]])
+    )
     if action == "lock":
-        vehicle =await vehicles_service.lock_vehicle(username, vehicle_id)
-        is_locked = True
-        text = "🚗 Карета заблокирована."
+        vehicle = await vehicles_service.lock_vehicle_with_waiting(username,vehicle_id)
+        text = f"🔒 Карета {vehicle.name} заблокирована"
     elif action == "unlock":
-        vehicle = await vehicles_service.unlock_vehicle(username, vehicle_id)
-        text = "🚗 Карета разблокирована."
+        vehicle = await vehicles_service.unlock_vehicle_with_waiting(username, vehicle_id)
+        text = f"🔓 Карета {vehicle.name} разблокирована"
     elif action == "beep":
         vehicle = await vehicles_service.beep(username, vehicle_id)
         text ="Сигнал отправлен."
     else:
         vehicle = None
         text = 'Неизвестная команда.'
-    with suppress(TelegramBadRequest):
-        kb = vehicle_action_keyboard(vehicle_id, is_locked)
-        answer = text + "\n\n" + vehicle.to_message() if vehicle else text
-        await callback.message.edit_text(answer, reply_markup=kb)
-    await callback.answer()
+
+    await callback.message.edit_text(
+        text + "\n\n" + vehicle.to_message() if vehicle else text,
+        reply_markup=vehicle_action_keyboard(vehicle_id, is_locked=vehicle.is_locked)
+    )
+    animation_task.cancel()
 
 
 @router.callback_query(F.data.startswith('location'))

@@ -4,7 +4,8 @@ from src.schemas.repair_request_schemas import RepairRequestSchema
 
 async def get_repair_request(username):
     async with ApiClient(username) as client:
-        return await client.get_repair_requests()
+        result = await client.get_repair_requests()
+        return [RepairRequestSchema(**r) for r in result]
 
 
 async def get_repair_request_by_id(username, req_id):

@@ -1,5 +1,7 @@
+import asyncio
+
 from src.services.api_client import ApiClient
-from src.schemas.vehicle_schemas import VehicleSchema
+from src.schemas.vehicle_schemas import VehicleSchema, VehicleLockShema
 
 
 async def get_vehicles(username):
@@ -19,6 +21,22 @@ async def get_vehicle_by_id(username, vehicle_id):
 
         return None
 
+async def lock_vehicle_with_waiting(username, vehicle_id):
+    "Заблокировать карету с ожиданием"
+    async with ApiClient(username) as client:
+        for _ in range(60):
+            result = await client.lock_vehicle(vehicle_id)
+            if result:
+                try:
+                    VehicleLockShema(**result)
+                except:
+                    try:
+                        return VehicleSchema(**result)
+                    except:
+                        return
+            await asyncio.sleep(1)
+
+
 async def lock_vehicle(username, vehicle_id):
     "Заблокировать карету"
     async with ApiClient(username) as client:
@@ -30,6 +48,24 @@ async def unlock_vehicle(username, vehicle_id):
     async with ApiClient(username) as client:
         result = await client.unlock_vehicle(vehicle_id)
     return VehicleSchema(**result)
+
+
+async def unlock_vehicle_with_waiting(username, vehicle_id):
+    "Заблокировать карету с ожиданием"
+    async with ApiClient(username) as client:
+        for _ in range(60):
+            result = await client.unlock_vehicle(vehicle_id)
+            print(result)
+            if result:
+                try:
+                    VehicleLockShema(**result)
+                except:
+                    try:
+                        return VehicleSchema(**result)
+                    except:
+                        return
+            await asyncio.sleep(1)
+
 
 async def beep(username, vehicle_id):
     "Подать звуковой сигнал"

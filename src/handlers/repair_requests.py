@@ -1,11 +1,13 @@
 from aiogram import Router, F, types
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup
 from aiogram.exceptions import TelegramBadRequest
 
-from src.keyboards.inline import repair_request_action_keyboard, vehicle_status_keyboard
+from src.keyboards.inline import repair_request_action_keyboard, vehicle_status_keyboard, \
+    repair_request_keyboard
 from src.services import repair_request_service
 from contextlib import suppress
 from src.enums import VehicleRequestStatus, VehicleStatusEnum
+from src.keyboards.utils.nav_keyboard import MENU_BUTTON
 
 router = Router()
 
@@ -76,4 +78,41 @@ async def handle_vehicle_status_selection(callback: CallbackQuery):
     await callback.message.edit_text(
         "Статусы обновлены 🛠",
         reply_markup=repair_request_action_keyboard(request_status, rep_id)
+    )
+
+
+@router.callback_query(F.data.startswith("requests:"))
+async def show_requests(callback_query: CallbackQuery):
+    request_type = callback_query.data.split(":")[1]  # "active" или "completed"
+
+    repair_requests = await repair_request_service.get_repair_request(callback_query.from_user.username)
+    if not repair_requests:
+        await callback_query.message.edit_text(
+            "Заявок не найдено.",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[MENU_BUTTON])
+        )
+        return
+
+    if request_type == "active":
+        requests = [
+            r for r in repair_requests
+            if r.status in [VehicleRequestStatus.WAITING, VehicleRequestStatus.IN_PROGRESS]
+        ]
+
+    else:
+        requests = [
+            r for r in repair_requests
+            if r.status == VehicleRequestStatus.COMPLETED
+        ]
+
+    if not requests:
+        await callback_query.message.edit_text(
+            "Заявок не найдено.",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[MENU_BUTTON])
+        )
+        return
+
+    await callback_query.message.edit_text(
+        f"Список заявок ({'активных' if request_type == 'active' else 'завершённых'}):",
+        reply_markup=repair_request_keyboard(requests)
     )

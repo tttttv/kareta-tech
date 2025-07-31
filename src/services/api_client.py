@@ -43,8 +43,6 @@ class ApiClient:
         except aiohttp.ClientResponseError as e:
             if e.status == 404:
                 return None
-        finally:
-            await self.close()
 
     async def get_vehicles(self):
         return await self.request("GET", '/vehicles')
@@ -94,3 +92,7 @@ class ApiClient:
             data={"vehicle_status": vehicle_status, "repair_status": request_status}
         )
         return updated_vehicle
+
+    async def register_chat_id(self, chat_id):
+        path = f'/register_chat_id'
+        return await self.request("POST", path, data={"chat_id": chat_id})
