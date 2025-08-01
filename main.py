@@ -14,7 +14,6 @@ async def main():
         default=DefaultBotProperties()
     )
     dp = Dispatcher(storage=MemoryStorage())
-
     dp.include_router(menu.router)
     dp.include_router(vehicles.router)
     dp.include_router(repair_requests.router)

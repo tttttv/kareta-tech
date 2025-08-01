@@ -34,15 +34,15 @@ class ApiClient:
             await self.initialize()
 
         url = f"{self.base_url}{path}"
-        try:
-            async with self.session.request(method, url, json=data, params=params, ssl=False) as response:
-                response.raise_for_status()
-                if response.content_type == 'application/json':
-                    return await response.json()
-                return await response.text()
-        except aiohttp.ClientResponseError as e:
-            if e.status == 404:
-                return None
+        # try:
+        async with self.session.request(method, url, json=data, params=params, ssl=False) as response:
+            response.raise_for_status()
+            if response.content_type == 'application/json':
+                return await response.json()
+            return await response.text()
+        # except aiohttp.ClientResponseError as e:
+        #     if e.status == 404:
+        #         return None
 
     async def get_vehicles(self):
         return await self.request("GET", '/vehicles')
@@ -96,3 +96,15 @@ class ApiClient:
     async def register_chat_id(self, chat_id):
         path = f'/register_chat_id'
         return await self.request("POST", path, data={"chat_id": chat_id})
+
+    async def get_geozones(self):
+        path = f'/allowed-geozones'
+        return await self.request("GET", path)
+
+    async def get_geozone_vehicles(self, geozone_id):
+        path = f'/geozones/{geozone_id}/vehicles'
+        return await self.request("GET", path)
+
+    async def get_geozone_requests(self, geozone_id):
+        path = f'/geozones/{geozone_id}/repair-requests'
+        return await self.request("GET", path)

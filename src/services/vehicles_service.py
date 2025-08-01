@@ -11,6 +11,14 @@ async def get_vehicles(username):
         return await client.get_vehicles()
 
 
+async def get_vehicles_by_geozone(username, geozone_id):
+    "Получить список карет в геозоне"
+
+    async with ApiClient(username) as client:
+        result = await client.get_geozone_vehicles(geozone_id)
+        return result
+
+
 async def get_vehicle_by_id(username, vehicle_id):
     "Получить карету по ее айди"
 

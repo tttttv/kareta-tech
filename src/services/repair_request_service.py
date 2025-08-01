@@ -38,3 +38,9 @@ async def update_request_and_vehicle_status(
             request_status,
             vehicle_status
         )
+
+
+async def get_requests_by_geozone(username, geozone_id):
+    async with ApiClient(username) as client:
+        resutl = await client.get_geozone_requests(geozone_id)
+        return [RepairRequestSchema(**r) for r in resutl]
