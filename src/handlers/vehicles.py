@@ -126,6 +126,7 @@ async def handle_vehicle_by_request(callback: types.CallbackQuery):
 
 @router.callback_query(F.data == "find_vehicle")
 async def ask_for_vehicle_id(callback: types.CallbackQuery, state: FSMContext):
+    "Предложение ввести ID кареты для поиска"
     await callback.message.answer("Введите ID кареты:")
     await state.set_state(SearchVehicleStates.waiting_for_vehicle_id)
     await callback.answer()
@@ -133,6 +134,7 @@ async def ask_for_vehicle_id(callback: types.CallbackQuery, state: FSMContext):
 
 @router.message(SearchVehicleStates.waiting_for_vehicle_id)
 async def process_vehicle_id_input(message: types.Message, state: FSMContext):
+    "Обработка ввода ID кареты"
     if not message.text.isdigit():
         await message.answer("❗ Пожалуйста, введите число.")
         return

@@ -63,7 +63,6 @@ async def unlock_vehicle_with_waiting(username, vehicle_id):
     async with ApiClient(username) as client:
         for _ in range(60):
             result = await client.unlock_vehicle(vehicle_id)
-            print(result)
             if result:
                 try:
                     VehicleLockShema(**result)
@@ -94,7 +93,10 @@ async def get_vehicle_by_request_id(username, request_id):
         obj = await client.get_vehicle_by_request_id(request_id)
 
         if obj:
-            return VehicleSchema(**obj)
+            try:
+                return VehicleSchema(**obj)
+            except Exception:
+                return obj
 
         return None
 
