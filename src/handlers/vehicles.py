@@ -140,19 +140,20 @@ async def process_vehicle_id_input(message: types.Message, state: FSMContext):
         return
 
     username = message.from_user.username
-
     vehicle_id = int(message.text)
+
     await state.clear()
 
     vehicle_info = await vehicles_service.get_vehicle_by_id(username, vehicle_id)
-    if vehicle_info and vehicle_info == "not found":
+
+    if vehicle_info == "not found":
         await message.answer(
             "❌ Карета с таким ID не найдена.",
             reply_markup=main_menu_keyboard()
         )
-    elif vehicle_info and vehicle_info == "forbidden":
+    elif vehicle_info == "forbidden":
         await message.answer(
-            "❌ Карета с таким ID недоступна.",
+            "❌ Карета с таким ID Вам недоступна.",
             reply_markup=main_menu_keyboard()
         )
     else:
