@@ -1,6 +1,7 @@
 import aiohttp
 from src.config import settings
 import backoff
+from aiohttp import ClientResponseError
 
 
 class ApiClient:
@@ -34,22 +35,30 @@ class ApiClient:
             await self.initialize()
 
         url = f"{self.base_url}{path}"
-        # try:
-        async with self.session.request(method, url, json=data, params=params, ssl=False) as response:
-            response.raise_for_status()
-            if response.content_type == 'application/json':
-                return await response.json()
-            return await response.text()
-        # except aiohttp.ClientResponseError as e:
-        #     if e.status == 404:
-        #         return None
+        try:
+            async with self.session.request(method, url, json=data, params=params, ssl=False) as response:
+                response.raise_for_status()
+                if response.content_type == 'application/json':
+                    return await response.json()
+                return await response.text()
+        except ClientResponseError as e:
+            if e.status == 403:
+                return {"error": "forbidden"}
+            elif e.status == 404:
+                return {"error": "not found"}
+            else:
+                raise
 
     async def get_vehicles(self):
         return await self.request("GET", '/vehicles')
 
     async def get_vehicle_by_id(self, vehicle_id):
         path = f'/vehicles/{vehicle_id}'
-        return await self.request("GET", path)
+        response = await self.request("GET", path)
+        if "error" in response:
+            return response['error']
+
+        return response
 
     async def get_vehicle_by_request_id(self, request_id):
         path = f'/repair-requests/{request_id}/vehicle'
