@@ -85,6 +85,7 @@ async def beep(username, vehicle_id):
 
 
 async def set_status(username, vehicle_id, status):
+    "Получить статус ТС"
     async with ApiClient(username) as client:
         result = await client.set_vehicle_status(vehicle_id, status)
         res_schema = VehicleSchema(**result)
@@ -92,6 +93,7 @@ async def set_status(username, vehicle_id, status):
 
 
 async def get_vehicle_by_request_id(username, request_id):
+    "Получить карету по айди заявки на ремонт"
     async with ApiClient(username) as client:
         obj = await client.get_vehicle_by_request_id(request_id)
 
@@ -105,6 +107,7 @@ async def get_vehicle_by_request_id(username, request_id):
 
 
 async def get_vehicle_with_location(username, vehicle_id):
+    "Получить карету с координатами"
     async with ApiClient(username) as client:
         vehicle_request = await client.get_vehicle_by_id(vehicle_id)
         vehicle = VehicleSchema(**vehicle_request)
