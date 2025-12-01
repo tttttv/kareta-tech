@@ -4,7 +4,11 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, \
 from src.enums import VehicleRequestStatus
 from src.enums import VehicleStatusEnum
 from src.keyboards.utils.nav_keyboard import (
-    MENU_BUTTON, BACK_TO_GEOZONES, BACK_TO_REPAIR_REQUESTS, BACK_TO_GEOZONE_SELECTION)
+    MENU_BUTTON, 
+    BACK_TO_GEOZONES, 
+    BACK_TO_REPAIR_REQUESTS, 
+    BACK_TO_GEOZONE_SELECTION
+)
 from src.schemas.geozone_schema import GeozoneSchema
 
 
@@ -18,27 +22,59 @@ def vehicle_keyboard(objects):
     )
     return kb
 
-
-def vehicle_action_keyboard(vehicle_id, is_locked: bool) -> InlineKeyboardMarkup:
-    lock_button = (
-        InlineKeyboardButton(text="🔓 Открыть", callback_data=f"unlock:{vehicle_id}")
-        if is_locked
-        else InlineKeyboardButton(text="🔒 Закрыть", callback_data=f"lock:{vehicle_id}")
-    )
+def vehicle_action_keyboard(
+    vehicle_id: int, 
+    is_locked: bool,
+    is_manual_lock: bool = False
+) -> InlineKeyboardMarkup:
+    
+    lock_button = None
+    
+    if is_locked:
+        lock_button = InlineKeyboardButton(text="🔓 Открыть", callback_data=f"unlock:{vehicle_id}")
+    else:
+        if not is_manual_lock:
+            lock_button = InlineKeyboardButton(text="🔒 Закрыть", callback_data=f"lock:{vehicle_id}")
+        
+    
+    # lock_button = (
+    #     InlineKeyboardButton(text="🔓 Открыть", callback_data=f"unlock:{vehicle_id}")
+    #     if is_locked
+    #     else InlineKeyboardButton(text="🔒 Закрыть", callback_data=f"lock:{vehicle_id}")
+    # )
 
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                lock_button,
-                InlineKeyboardButton(text="На карте", callback_data=f"location:{vehicle_id}")
+                lock_button if lock_button else None,
+                InlineKeyboardButton(text="🗺️ На карте", callback_data=f"location:{vehicle_id}")
             ],
             [
                 InlineKeyboardButton(text="📣 Сигнал", callback_data=f"beep:{vehicle_id}")
+            ],
+            [
+                InlineKeyboardButton(text="🔨 Изменить статус", callback_data=f"get_keyboard_to_set_vehicle_status:{vehicle_id}")
+            ],
+            [
+                InlineKeyboardButton(text="🔃 Интервал отправки координат 30 сек.", callback_data=f"set_tracking_interval_30:{vehicle_id}")
+            ],
+            [
+                InlineKeyboardButton(text="🔃 Интервал отправки координат 60 сек.", callback_data=f"set_tracking_interval_60:{vehicle_id}")
+            ],
+            [
+                InlineKeyboardButton(text="🧭 Обновить текущие координаты", callback_data=f"update_vehicle_location:{vehicle_id}")
+                # TODO: Нужно разобраться с тем, что у нас по перезагрузке замка (на одном из протоколов её нет)
             ]
-        ] + [[InlineKeyboardButton(text="Назад", callback_data="menu:vehicles_by_geozone")]] + [MENU_BUTTON]
+        ] + [
+            [
+                InlineKeyboardButton(text="Назад", callback_data="menu:vehicles_by_geozone")
+            ]
+        ] + [
+            MENU_BUTTON
+        ]
     )
+    
     return kb
-
 
 def repair_request_keyboard(objects):
 
@@ -49,7 +85,6 @@ def repair_request_keyboard(objects):
         ] + [BACK_TO_REPAIR_REQUESTS] + [MENU_BUTTON]
     )
     return kb
-
 
 def repair_request_action_keyboard(request_status, rep_id) -> InlineKeyboardMarkup:
     buttons = []
@@ -84,12 +119,29 @@ def repair_request_action_keyboard(request_status, rep_id) -> InlineKeyboardMark
 
     return InlineKeyboardMarkup(inline_keyboard=buttons_markup)
 
+def vehicle_status_keyboard_without_request(
+    vehicle_id: int,
+) -> InlineKeyboardMarkup:
+    statuses = [
+        (VehicleStatusEnum.UNAVAILABLE_IN_SERVICE, "🔧 Ремонт"),
+        (VehicleStatusEnum.UNAVAILABLE_IN_SERVICE, "🩸 Донор"),
+        (VehicleStatusEnum.UNAVAILABLE_IN_MAINTENANCE, "🛠 Обслуживание"),
+        (VehicleStatusEnum.AVAILABLE, "🚚 Доступна"),
+    ]
+    buttons = [
+        InlineKeyboardButton(
+            text=label,
+            callback_data=f"set_vehicle_status_without_request:{vehicle_id}:{veh_status.value}"
+        ) for veh_status, label in statuses
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=[[b] for b in buttons] + [MENU_BUTTON])
 
 def vehicle_status_keyboard(rep_id: int, request_status: VehicleRequestStatus) -> InlineKeyboardMarkup:
     statuses = [
         (VehicleStatusEnum.UNAVAILABLE_IN_SERVICE, "🔧 Ремонт"),
         (VehicleStatusEnum.UNAVAILABLE_IN_SERVICE, "🩸 Донор"),
         (VehicleStatusEnum.UNAVAILABLE_IN_MAINTENANCE, "🛠 Обслуживание"),
+        (VehicleStatusEnum.AVAILABLE, "🚚 Доступна"),
     ]
     buttons = [
         InlineKeyboardButton(
@@ -98,7 +150,6 @@ def vehicle_status_keyboard(rep_id: int, request_status: VehicleRequestStatus) -
         ) for veh_status, label in statuses
     ]
     return InlineKeyboardMarkup(inline_keyboard=[[b] for b in buttons] + [MENU_BUTTON])
-
 
 def geozone_objects_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -111,7 +162,6 @@ def geozone_objects_kb() -> InlineKeyboardMarkup:
     ])
     return kb
 
-
 def main_menu_keyboard() -> InlineKeyboardMarkup:
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -121,7 +171,6 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
     ])
     return kb
 
-
 def geozone_selecting_keyboard(geozones: list[GeozoneSchema]) -> InlineKeyboardMarkup:
      kb = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -130,7 +179,6 @@ def geozone_selecting_keyboard(geozones: list[GeozoneSchema]) -> InlineKeyboardM
         ] + [MENU_BUTTON]
     )
      return kb
-
 
 def request_type_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
@@ -142,7 +190,6 @@ def request_type_keyboard() -> InlineKeyboardMarkup:
         ] + [BACK_TO_GEOZONES] + [MENU_BUTTON]
     )
 
-
 def start_keyboard():
     return ReplyKeyboardMarkup(
     keyboard=[
@@ -151,7 +198,6 @@ def start_keyboard():
     resize_keyboard=True,
     one_time_keyboard=True,
 )
-
 
 def after_repair_status_change_action_keyboard(request_status, rep_id) -> InlineKeyboardMarkup:
     buttons = []

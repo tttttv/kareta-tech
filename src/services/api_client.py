@@ -77,6 +77,18 @@ class ApiClient:
         path = f'/vehicles/{vehicle_id}/beep'
         return await self.request("POST", path)
 
+    async def set_tracking_interval_30(self, vehicle_id):
+        path = f'/vehicles/{vehicle_id}/tracking-interval-30'
+        return await self.request("POST", path)
+
+    async def set_tracking_interval_60(self, vehicle_id):
+        path = f'/vehicles/{vehicle_id}/tracking-interval-60'
+        return await self.request("POST", path)
+    
+    async def force_get_location(self, vehicle_id):
+        path = f'/vehicles/{vehicle_id}/force-get-location'
+        return await self.request("POST", path)
+    
     async def set_vehicle_status(self, vehicle_id, status):
         path = f'/vehicles/{vehicle_id}/status/{status}'
         return await self.request("POST", path)

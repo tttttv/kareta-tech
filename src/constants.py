@@ -1,0 +1,3 @@
+MANUAL_LOCK_PROTOCOLS = [
+    "OMNI_IOT"
+]
