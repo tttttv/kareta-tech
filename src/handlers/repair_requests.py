@@ -3,11 +3,12 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup
 from aiogram.exceptions import TelegramBadRequest
 
 from src.keyboards.inline import repair_request_action_keyboard, vehicle_status_keyboard, \
-    repair_request_keyboard, after_repair_status_change_action_keyboard
+    repair_request_keyboard, after_repair_status_change_action_keyboard, vehicle_status_keyboard_without_request, vehicle_action_keyboard
 from src.services import repair_request_service
 from contextlib import suppress
 from src.enums import VehicleRequestStatus, VehicleStatusEnum
 from src.keyboards.utils.nav_keyboard import MENU_BUTTON, BACK_TO_REPAIR_REQUESTS
+from src.constants import MANUAL_LOCK_PROTOCOLS
 from aiogram.fsm.context import FSMContext
 
 router = Router()
@@ -35,37 +36,68 @@ async def handle_repair_request_detail(callback: CallbackQuery):
 
 @router.callback_query(F.data.startswith("set_repair_status:"))
 async def handle_repair_status_change(callback: CallbackQuery):
-    "Изменить статус заявки и передать в хэндлер для выбора статуса кареты"
+    """Изменить статус заявки и передать в хэндлер для выбора статуса кареты"""
 
     _, rep_id_str, request_status_str = callback.data.split(":")
     rep_id = int(rep_id_str)
     current_request_status = VehicleRequestStatus(request_status_str)
     username = callback.from_user.username
 
-    if current_request_status == VehicleRequestStatus.IN_PROGRESS:
+    # Для всех статусов предлагаем выбрать статус кареты
+    await callback.message.edit_text(
+        "Выберите новый статус кареты:",
+        reply_markup=vehicle_status_keyboard(rep_id, current_request_status)
+    )
 
-        await callback.message.edit_text(
-            "Выберите новый статус кареты:",
-            reply_markup=vehicle_status_keyboard(rep_id, current_request_status)
-        )
-    elif current_request_status == VehicleRequestStatus.COMPLETED or current_request_status == VehicleRequestStatus.WAITING:
-        # Отправляем сразу оба новых статуса
-        await repair_request_service.update_request_and_vehicle_status(
-            username,
-            request_id=rep_id,
-            request_status=current_request_status,
-            vehicle_status=VehicleStatusEnum.AVAILABLE
-        )
-        return_status = VehicleRequestStatus.IN_PROGRESS
-        await callback.message.edit_text(
-            "Статусы обновлены ✅",
-            reply_markup=after_repair_status_change_action_keyboard(return_status, rep_id)
-        )
+@router.callback_query(F.data.startswith("get_keyboard_to_set_vehicle_status:"))
+async def handle_vehicle_status_change_without_request(callback: CallbackQuery):
+    """Изменить статус кареты"""
 
+    _, vehicle_id_str = callback.data.split(":")
+    vehicle_id = int(vehicle_id_str)
+    # vehicle_status = VehicleStatusEnum(vehicle_status_str)
+    username = callback.from_user.username
+
+    # await repair_request_service.update_vehicle_status(
+    #     username=username, 
+    #     vehicle_id=vehicle_id, 
+    #     vehicle_status=vehicle_status
+    # )
+    
+    await callback.message.edit_text(
+        "Выберите новый статус кареты:",
+        reply_markup=vehicle_status_keyboard_without_request(vehicle_id)
+    )
+
+@router.callback_query(F.data.startswith("set_vehicle_status_without_request:"))
+async def handle_vehicle_status_selection_without_request(callback: CallbackQuery):
+    """Изменить статус кареты"""
+
+    _, vehicle_id_str, vehicle_status_str = callback.data.split(":")
+    vehicle_id = int(vehicle_id_str)
+    vehicle_status = VehicleStatusEnum(vehicle_status_str)
+    username = callback.from_user.username
+
+    vehicle = await repair_request_service.update_vehicle_status(
+        username=username, 
+        vehicle_id=vehicle_id, 
+        vehicle_status=vehicle_status.value
+    )
+
+    await callback.message.edit_text(
+        "Статус кареты обновлен ✅"
+        "\n\n"
+        f"{vehicle.to_message()}",
+        reply_markup=vehicle_action_keyboard(
+            vehicle_id, 
+            is_locked=vehicle.is_locked,
+            is_manual_lock=True if vehicle.lock_type in MANUAL_LOCK_PROTOCOLS else False
+        )
+    )
 
 @router.callback_query(F.data.startswith("set_vehicle_status:"))
 async def handle_vehicle_status_selection(callback: CallbackQuery):
-    "Изменить статус кареты"
+    """Изменить статус кареты и заявки"""
 
     _, rep_id_str, request_status_str, vehicle_status_str = callback.data.split(":")
     rep_id = int(rep_id_str)
@@ -73,22 +105,83 @@ async def handle_vehicle_status_selection(callback: CallbackQuery):
     vehicle_status = VehicleStatusEnum(vehicle_status_str)
     username = callback.from_user.username
 
+    # Обновляем оба статуса
     await repair_request_service.update_request_and_vehicle_status(
         username,
         request_id=rep_id,
         request_status=request_status,
         vehicle_status=vehicle_status
     )
-    # Меняем статус на противоположный чтобы по кнопке назад вернуться обратно к заявкам в данном статусе
-    if request_status == VehicleRequestStatus.IN_PROGRESS or VehicleRequestStatus.WAITING:
-        return_status = VehicleRequestStatus.COMPLETED
-    else:
+    
+    # Определяем статус для кнопки "Назад"
+    if request_status in (VehicleRequestStatus.COMPLETED, VehicleRequestStatus.WAITING):
         return_status = VehicleRequestStatus.IN_PROGRESS
+    else:
+        return_status = VehicleRequestStatus.COMPLETED
 
     await callback.message.edit_text(
-        "Статусы обновлены 🛠",
+        "Статусы обновлены ✅",
         reply_markup=after_repair_status_change_action_keyboard(return_status, rep_id)
     )
+
+# @router.callback_query(F.data.startswith("set_repair_status:"))
+# async def handle_repair_status_change(callback: CallbackQuery):
+#     "Изменить статус заявки и передать в хэндлер для выбора статуса кареты"
+
+#     _, rep_id_str, request_status_str = callback.data.split(":")
+#     rep_id = int(rep_id_str)
+#     current_request_status = VehicleRequestStatus(request_status_str)
+#     username = callback.from_user.username
+
+#     if current_request_status == VehicleRequestStatus.IN_PROGRESS:
+
+#         await callback.message.edit_text(
+#             "Выберите новый статус кареты:",
+#             reply_markup=vehicle_status_keyboard(rep_id, current_request_status)
+#         )
+        
+#     elif current_request_status == VehicleRequestStatus.COMPLETED or current_request_status == VehicleRequestStatus.WAITING:
+#         # Отправляем сразу оба новых статуса
+        
+#         await repair_request_service.update_request_and_vehicle_status(
+#             username,
+#             request_id=rep_id,
+#             request_status=current_request_status,
+#             vehicle_status=VehicleStatusEnum.AVAILABLE
+#         )
+#         return_status = VehicleRequestStatus.IN_PROGRESS
+#         await callback.message.edit_text(
+#             "Статусы обновлены ✅",
+#             reply_markup=after_repair_status_change_action_keyboard(return_status, rep_id)
+#         )
+
+
+# @router.callback_query(F.data.startswith("set_vehicle_status:"))
+# async def handle_vehicle_status_selection(callback: CallbackQuery):
+#     "Изменить статус кареты"
+
+#     _, rep_id_str, request_status_str, vehicle_status_str = callback.data.split(":")
+#     rep_id = int(rep_id_str)
+#     request_status = VehicleRequestStatus(request_status_str)
+#     vehicle_status = VehicleStatusEnum(vehicle_status_str)
+#     username = callback.from_user.username
+
+#     await repair_request_service.update_request_and_vehicle_status(
+#         username,
+#         request_id=rep_id,
+#         request_status=request_status,
+#         vehicle_status=vehicle_status
+#     )
+#     # Меняем статус на противоположный чтобы по кнопке назад вернуться обратно к заявкам в данном статусе
+#     if request_status == VehicleRequestStatus.IN_PROGRESS or VehicleRequestStatus.WAITING:
+#         return_status = VehicleRequestStatus.COMPLETED
+#     else:
+#         return_status = VehicleRequestStatus.IN_PROGRESS
+
+#     await callback.message.edit_text(
+#         "Статусы обновлены 🛠",
+#         reply_markup=after_repair_status_change_action_keyboard(return_status, rep_id)
+#     )
 
 
 @router.callback_query(F.data.startswith("requests_by_geo:"))
