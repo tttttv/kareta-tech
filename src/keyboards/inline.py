@@ -43,12 +43,17 @@ def vehicle_action_keyboard(
     #     else InlineKeyboardButton(text="🔒 Закрыть", callback_data=f"lock:{vehicle_id}")
     # )
 
+    map_keyboard_button = InlineKeyboardButton(text="🗺️ На карте", callback_data=f"location:{vehicle_id}")
+    first_row = []
+    
+    if lock_button:
+        first_row.append(lock_button)
+
+    first_row.append(map_keyboard_button)
+
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                lock_button if lock_button else None,
-                InlineKeyboardButton(text="🗺️ На карте", callback_data=f"location:{vehicle_id}")
-            ],
+            first_row,
             [
                 InlineKeyboardButton(text="📣 Сигнал", callback_data=f"beep:{vehicle_id}")
             ],

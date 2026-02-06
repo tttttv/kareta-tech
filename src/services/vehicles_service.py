@@ -97,6 +97,16 @@ async def unlock_vehicle_with_waiting(
                         return
             await asyncio.sleep(1)
 
+async def get_current_pending_command(
+    username,
+    vehicle_id
+):
+    """Получить текущую выполняющуюся команду, если она есть"""
+    
+    # TODO: Сделать реализацию
+    
+    pass
+
 async def beep(
     username, 
     vehicle_id

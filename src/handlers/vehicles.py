@@ -91,13 +91,15 @@ async def handle_vehicle_action(
             username=username,
             vehicle_id=vehicle_id
         )
-        text = f"🔒 Карета {vehicle.name} заблокирована"
+        if vehicle:
+            text = f"🔒 Карета {vehicle.name} заблокирована"
     elif action == "unlock":
         vehicle = await vehicles_service.unlock_vehicle_with_waiting(
             username=username, 
             vehicle_id=vehicle_id
         )
-        text = f"🔓 Карета {vehicle.name} разблокирована"
+        if vehicle:
+            text = f"🔓 Карета {vehicle.name} разблокирована"
     elif action == "beep":
         vehicle = await vehicles_service.beep(
             username=username, 
@@ -126,6 +128,13 @@ async def handle_vehicle_action(
         vehicle = None
         text = 'Неизвестная команда.'
 
+    if not vehicle:
+        text = "Ошибка при выполнении команды."
+        vehicle = await vehicles_service.get_vehicle_by_id(
+            username=username, 
+            vehicle_id=vehicle_id
+        )
+    
     await callback.message.edit_text(
         text + "\n\n" + vehicle.to_message() if vehicle else text,
         reply_markup=vehicle_action_keyboard(
