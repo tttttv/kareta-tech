@@ -60,6 +60,15 @@ class ApiClient:
 
         return response
 
+    async def get_vehicle_by_code(self, vehicle_code):
+        path = f'/vehicles/get_by_code/{vehicle_code}'
+        response = await self.request("GET", path)
+        
+        if "error" in response:
+            return response['error']
+        
+        return response
+    
     async def get_vehicle_by_request_id(self, request_id):
         path = f'/repair-requests/{request_id}/vehicle'
 

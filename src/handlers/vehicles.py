@@ -1,6 +1,7 @@
 # import asyncio
 
 from aiogram import Router, types, F
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.types import LinkPreviewOptions
@@ -35,10 +36,23 @@ async def handle_vehicle_selection(
             is_locked=result.is_locked,
             is_manual_lock=True if result.lock_type in MANUAL_LOCK_PROTOCOLS else False
         )
-        await callback.message.edit_text(
-            result.to_message(),
-            reply_markup=kb
-        )
+        
+        try:
+            await callback.message.edit_text(
+                text=result.to_message(),
+                reply_markup=kb
+            )
+        except TelegramBadRequest as e:
+            if "message is not modified" in str(e):
+                # Просто игнорируем эту ошибку
+                await callback.answer()
+            else:
+                raise
+        
+        # await callback.message.edit_text(
+        #     result.to_message(),
+        #     reply_markup=kb
+        # )
     else:
         await callback.message.edit_text(
             "Объект не найден.",
@@ -221,50 +235,56 @@ async def handle_vehicle_by_request(
     await callback.answer()
 
 @router.callback_query(F.data == "find_vehicle")
-async def ask_for_vehicle_id(
+async def ask_for_vehicle_code(
     callback: types.CallbackQuery, 
     state: FSMContext
 ):
-    """Предложение ввести ID кареты для поиска"""
+    """Предложение ввести код кареты для поиска"""
     
-    await callback.message.answer("Введите ID кареты:")
+    await callback.message.answer("Введите название (код) кареты:")
     await state.set_state(SearchVehicleStates.waiting_for_vehicle_id)
     await callback.answer()
 
 @router.message(SearchVehicleStates.waiting_for_vehicle_id)
-async def process_vehicle_id_input(
+async def process_vehicle_code_input(
     message: types.Message, 
     state: FSMContext
 ):
-    """Обработка ввода ID кареты"""
+    """Обработка ввода кода кареты"""
     
     if not message.text.isdigit():
         await message.answer("❗ Пожалуйста, введите число.")
         return
 
     username = message.from_user.username
-    vehicle_id = int(message.text)
+    # vehicle_id = int(message.text)
+    vehicle_code = message.text
 
     await state.clear()
 
-    vehicle_info = await vehicles_service.get_vehicle_by_id(
+    # vehicle_info = await vehicles_service.get_vehicle_by_id(
+    #     username=username, 
+    #     vehicle_id=vehicle_id
+    # )
+
+    vehicle_info = await vehicles_service.get_vehicle_by_code(
         username=username, 
-        vehicle_id=vehicle_id
+        vehicle_code=vehicle_code
     )
 
     if vehicle_info == "not found":
         await message.answer(
-            "❌ Карета с таким ID не найдена.",
+            "❌ Карета по данному коду не найдена.",
             reply_markup=main_menu_keyboard()
         )
     elif vehicle_info == "forbidden":
         await message.answer(
-            "❌ Карета с таким ID Вам недоступна.",
+            "❌ Карета по данному коду Вам недоступна.",
             reply_markup=main_menu_keyboard()
         )
     else:
         kb = vehicle_action_keyboard(
-            vehicle_id=vehicle_id, 
+            vehicle_id=vehicle_info.id, 
             is_locked=vehicle_info.is_locked
         )
         await message.answer(

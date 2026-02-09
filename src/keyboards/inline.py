@@ -69,6 +69,9 @@ def vehicle_action_keyboard(
             [
                 InlineKeyboardButton(text="🧭 Обновить текущие координаты", callback_data=f"update_vehicle_location:{vehicle_id}")
                 # TODO: Нужно разобраться с тем, что у нас по перезагрузке замка (на одном из протоколов её нет)
+            ],
+            [
+                InlineKeyboardButton(text="🔄️ Обновить данные", callback_data=f"vehicle:{vehicle_id}")
             ]
         ] + [
             [
@@ -171,7 +174,7 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="📍 Выбрать геозону", callback_data="choose_geozone"),
-            InlineKeyboardButton(text="Найти по айди", callback_data="find_vehicle"),
+            InlineKeyboardButton(text="Найти по названию (коду)", callback_data="find_vehicle"),
         ]
     ])
     return kb
