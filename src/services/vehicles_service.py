@@ -39,6 +39,22 @@ async def get_vehicle_by_id(
 
         return None
 
+async def get_vehicle_by_code(
+    username: str,
+    vehicle_code: str
+):
+    """Метод для получения кареты по ее коду."""
+    
+    async with ApiClient(username) as client:
+        obj = await client.get_vehicle_by_code(vehicle_code)
+        if obj:
+            try:
+                return VehicleSchema(**obj)
+            except Exception:
+                return obj
+
+        return None
+
 async def lock_vehicle_with_waiting(
     username, 
     vehicle_id
@@ -96,6 +112,16 @@ async def unlock_vehicle_with_waiting(
                     except:
                         return
             await asyncio.sleep(1)
+
+async def get_current_pending_command(
+    username,
+    vehicle_id
+):
+    """Получить текущую выполняющуюся команду, если она есть"""
+    
+    # TODO: Сделать реализацию
+    
+    pass
 
 async def beep(
     username, 
