@@ -25,7 +25,8 @@ def vehicle_keyboard(objects):
 def vehicle_action_keyboard(
     vehicle_id: int, 
     is_locked: bool,
-    is_manual_lock: bool = False
+    is_manual_lock: bool = False,
+    actual_command: str | None = None
 ) -> InlineKeyboardMarkup:
     
     lock_button = None
@@ -50,33 +51,50 @@ def vehicle_action_keyboard(
         first_row.append(lock_button)
 
     first_row.append(map_keyboard_button)
-
+    
+    available_vehicle_command_buttons = []
+    vehicle_command_buttons = [
+        first_row,
+        [
+            InlineKeyboardButton(text="📣 Сигнал", callback_data=f"beep:{vehicle_id}")
+        ],
+        [
+            InlineKeyboardButton(text="🔨 Изменить статус", callback_data=f"get_keyboard_to_set_vehicle_status:{vehicle_id}")
+        ],
+        [
+            InlineKeyboardButton(text="🔃 Интервал отправки координат 30 сек.", callback_data=f"set_tracking_interval_30:{vehicle_id}")
+        ],
+        [
+            InlineKeyboardButton(text="🔃 Интервал отправки координат 60 сек.", callback_data=f"set_tracking_interval_60:{vehicle_id}")
+        ],
+        [
+            InlineKeyboardButton(text="🧭 Обновить текущие координаты", callback_data=f"update_vehicle_location:{vehicle_id}")
+            # TODO: Нужно разобраться с тем, что у нас по перезагрузке замка (на одном из протоколов её нет)
+        ],
+    ]
+    
+    
+    if actual_command:
+        current_command_button = InlineKeyboardButton(text=f"⌛ Команда {actual_command} выполняется", callback_data=f"ignore:{vehicle_id}")
+        cancel_current_command_button = InlineKeyboardButton(text="🚫 Отменить текущую команду", callback_data=f"cancel_command:{vehicle_id}:{actual_command}")
+        
+        available_vehicle_command_buttons = [
+            [current_command_button],
+            [cancel_current_command_button]
+        ]
+    else:
+        available_vehicle_command_buttons = vehicle_command_buttons
+    
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            first_row,
-            [
-                InlineKeyboardButton(text="📣 Сигнал", callback_data=f"beep:{vehicle_id}")
-            ],
-            [
-                InlineKeyboardButton(text="🔨 Изменить статус", callback_data=f"get_keyboard_to_set_vehicle_status:{vehicle_id}")
-            ],
-            [
-                InlineKeyboardButton(text="🔃 Интервал отправки координат 30 сек.", callback_data=f"set_tracking_interval_30:{vehicle_id}")
-            ],
-            [
-                InlineKeyboardButton(text="🔃 Интервал отправки координат 60 сек.", callback_data=f"set_tracking_interval_60:{vehicle_id}")
-            ],
-            [
-                InlineKeyboardButton(text="🧭 Обновить текущие координаты", callback_data=f"update_vehicle_location:{vehicle_id}")
-                # TODO: Нужно разобраться с тем, что у нас по перезагрузке замка (на одном из протоколов её нет)
-            ],
+            *available_vehicle_command_buttons,
             [
                 InlineKeyboardButton(text="🔄️ Обновить данные", callback_data=f"vehicle:{vehicle_id}")
             ]
         ] + [
-            [
-                InlineKeyboardButton(text="Назад", callback_data="menu:vehicles_by_geozone")
-            ]
+                [
+                    InlineKeyboardButton(text="Назад", callback_data="menu:vehicles_by_geozone")
+                ]
         ] + [
             MENU_BUTTON
         ]

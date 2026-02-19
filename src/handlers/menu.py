@@ -86,6 +86,13 @@ async def menu_vehicles_by_geozone(callback: types.CallbackQuery, state: FSMCont
 
     data = await state.get_data()
     geozone_id = data.get("geozone_id")
+    
+    if not geozone_id:
+        await callback.message.edit_text(
+            "Выберите, что хотите сделать:",
+            reply_markup=main_menu_keyboard()
+        )
+    
     username = callback.from_user.username
 
     objects = await vehicles_service.get_vehicles_by_geozone(username, geozone_id)
