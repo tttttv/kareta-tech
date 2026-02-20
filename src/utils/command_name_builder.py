@@ -1,4 +1,20 @@
-def get_true_command_name(command_name: str, vehicle_type: str) -> str:
+def get_true_command_name(
+    command_name: str, 
+    vehicle_type: str
+) -> str:
+    """
+    Метод для преобразования названий команд
+    из коллбеков в имена команд на бэкенде.
+    
+    :param command_name: Название команды из коллбека
+    :type command_name: str
+    :param vehicle_type: Тип кареты
+    :type vehicle_type: str
+    
+    :return: Имя команды на бэкенде
+    :rtype: str
+    """
+    
     if command_name == "lock":
         return "LOCK"
     if command_name == "unlock":
@@ -15,4 +31,4 @@ def get_true_command_name(command_name: str, vehicle_type: str) -> str:
         else:
             return "GET_LOCATION"
     
-    return command_name
+    return command_name.upper()

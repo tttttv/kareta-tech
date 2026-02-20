@@ -1,14 +1,14 @@
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, \
-    ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import ReplyKeyboardMarkup
+from aiogram.types import KeyboardButton
 
 from src.enums import VehicleRequestStatus
 from src.enums import VehicleStatusEnum
-from src.keyboards.utils.nav_keyboard import (
-    MENU_BUTTON, 
-    BACK_TO_GEOZONES, 
-    BACK_TO_REPAIR_REQUESTS, 
-    BACK_TO_GEOZONE_SELECTION
-)
+from src.keyboards.utils.nav_keyboard import MENU_BUTTON
+from src.keyboards.utils.nav_keyboard import BACK_TO_GEOZONES
+from src.keyboards.utils.nav_keyboard import BACK_TO_REPAIR_REQUESTS
+from src.keyboards.utils.nav_keyboard import BACK_TO_GEOZONE_SELECTION
 from src.schemas.geozone_schema import GeozoneSchema
 
 

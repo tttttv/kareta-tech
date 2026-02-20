@@ -1,9 +1,12 @@
 # import asyncio
 
-from aiogram import Router, types, F
+from aiogram import Router
+from aiogram import types
+from aiogram import F
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup
 from aiogram.types import LinkPreviewOptions
 
 from src.keyboards.inline import main_menu_keyboard
@@ -184,7 +187,8 @@ async def handle_vehicle_action(
         text + "\n\n" + vehicle.to_message() if vehicle else text,
         reply_markup=vehicle_action_keyboard(
             vehicle_id=vehicle_id, 
-            is_locked=vehicle.is_locked
+            is_locked=vehicle.is_locked,
+            is_manual_lock=True if vehicle.lock_type in MANUAL_LOCK_PROTOCOLS else False
         )
     )
     # animation_task.cancel()
@@ -226,14 +230,15 @@ async def handle_vehicle_location(
         )
     )
 
-    kb = vehicle_action_keyboard(
-        vehicle_id=vehicle_id, 
-        is_locked=vehicle.is_locked
-    )
-    await callback.message.answer(
-        "Выберите действие:",
-        reply_markup=kb
-    )
+    # kb = vehicle_action_keyboard(
+    #     vehicle_id=vehicle_id, 
+    #     is_locked=vehicle.is_locked,
+    #     is_manual_lock=True if vehicle.lock_type in MANUAL_LOCK_PROTOCOLS else False
+    # )
+    # await callback.message.answer(
+    #     "Выберите действие:",
+    #     reply_markup=kb
+    # )
 
     await callback.answer()
 
@@ -256,7 +261,11 @@ async def handle_vehicle_by_request(
     else:
         await callback.message.edit_text("Объект не найден.")
 
-    kb = vehicle_action_keyboard(result.id, result.is_locked)
+    kb = vehicle_action_keyboard(
+        result.id, 
+        result.is_locked,
+        is_manual_lock=True if result.lock_type in MANUAL_LOCK_PROTOCOLS else False
+    )
 
     await callback.message.edit_text(
         result.to_message(), 

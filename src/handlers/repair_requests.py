@@ -1,41 +1,64 @@
-from aiogram import Router, F, types
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup
+from aiogram import Router
+from aiogram import F
+from aiogram import types
+from aiogram.types import CallbackQuery
+from aiogram.types import InlineKeyboardMarkup
 from aiogram.exceptions import TelegramBadRequest
 
-from src.keyboards.inline import repair_request_action_keyboard, vehicle_status_keyboard, \
-    repair_request_keyboard, after_repair_status_change_action_keyboard, vehicle_status_keyboard_without_request, vehicle_action_keyboard
+from src.keyboards.inline import repair_request_action_keyboard
+from src.keyboards.inline import vehicle_status_keyboard
+from src.keyboards.inline import repair_request_keyboard
+from src.keyboards.inline import after_repair_status_change_action_keyboard
+from src.keyboards.inline import vehicle_status_keyboard_without_request
+from src.keyboards.inline import vehicle_action_keyboard
 from src.services import repair_request_service
 from contextlib import suppress
-from src.enums import VehicleRequestStatus, VehicleStatusEnum
-from src.keyboards.utils.nav_keyboard import MENU_BUTTON, BACK_TO_REPAIR_REQUESTS
+from src.enums import VehicleRequestStatus
+from src.enums import VehicleStatusEnum
+from src.keyboards.utils.nav_keyboard import MENU_BUTTON
+from src.keyboards.utils.nav_keyboard import BACK_TO_REPAIR_REQUESTS
 from src.constants import MANUAL_LOCK_PROTOCOLS
 from aiogram.fsm.context import FSMContext
+
 
 router = Router()
 
 
 @router.callback_query(F.data.startswith("repair_req:"))
-async def handle_repair_request_detail(callback: CallbackQuery):
-    "Получить заявку по ее айди"
+async def handle_repair_request_detail(
+    callback: CallbackQuery
+):
+    """Получить заявку по ее айди"""
 
     req_id = int(callback.data.split(":")[1])
     username = callback.from_user.username
 
-    obj = await repair_request_service.get_repair_request_by_id(username, req_id)
+    obj = await repair_request_service.get_repair_request_by_id(
+        username=username, 
+        req_id=req_id
+    )
     text = obj.to_message()
 
     if not text:
         text = "Объект не найден."
 
-    kb = repair_request_action_keyboard(obj.status, req_id)
+    kb = repair_request_action_keyboard(
+        request_status=obj.status, 
+        rep_id=req_id
+    )
     with suppress(TelegramBadRequest):
-        await callback.message.edit_text(text, reply_markup=kb)
+        await callback.message.edit_text(
+            text, 
+            reply_markup=kb
+        )
 
     await callback.answer()
 
 
 @router.callback_query(F.data.startswith("set_repair_status:"))
-async def handle_repair_status_change(callback: CallbackQuery):
+async def handle_repair_status_change(
+    callback: CallbackQuery
+):
     """Изменить статус заявки и передать в хэндлер для выбора статуса кареты"""
 
     _, rep_id_str, request_status_str = callback.data.split(":")
@@ -46,11 +69,16 @@ async def handle_repair_status_change(callback: CallbackQuery):
     # Для всех статусов предлагаем выбрать статус кареты
     await callback.message.edit_text(
         "Выберите новый статус кареты:",
-        reply_markup=vehicle_status_keyboard(rep_id, current_request_status)
+        reply_markup=vehicle_status_keyboard(
+            rep_id=rep_id, 
+            request_status=current_request_status
+        )
     )
 
 @router.callback_query(F.data.startswith("get_keyboard_to_set_vehicle_status:"))
-async def handle_vehicle_status_change_without_request(callback: CallbackQuery):
+async def handle_vehicle_status_change_without_request(
+    callback: CallbackQuery
+):
     """Изменить статус кареты"""
 
     _, vehicle_id_str = callback.data.split(":")
@@ -70,7 +98,9 @@ async def handle_vehicle_status_change_without_request(callback: CallbackQuery):
     )
 
 @router.callback_query(F.data.startswith("set_vehicle_status_without_request:"))
-async def handle_vehicle_status_selection_without_request(callback: CallbackQuery):
+async def handle_vehicle_status_selection_without_request(
+    callback: CallbackQuery
+):
     """Изменить статус кареты"""
 
     _, vehicle_id_str, vehicle_status_str = callback.data.split(":")
@@ -96,7 +126,9 @@ async def handle_vehicle_status_selection_without_request(callback: CallbackQuer
     )
 
 @router.callback_query(F.data.startswith("set_vehicle_status:"))
-async def handle_vehicle_status_selection(callback: CallbackQuery):
+async def handle_vehicle_status_selection(
+    callback: CallbackQuery
+):
     """Изменить статус кареты и заявки"""
 
     _, rep_id_str, request_status_str, vehicle_status_str = callback.data.split(":")
@@ -185,15 +217,21 @@ async def handle_vehicle_status_selection(callback: CallbackQuery):
 
 
 @router.callback_query(F.data.startswith("requests_by_geo:"))
-async def show_requests_by_geozone(callback_query: types.CallbackQuery, state: FSMContext):
-    "Показать заявки на ремонт по геозоне"
+async def show_requests_by_geozone(
+    callback_query: types.CallbackQuery, 
+    state: FSMContext
+):
+    """Показать заявки на ремонт по геозоне"""
 
     request_type = callback_query.data.split(":")[1]
     username = callback_query.from_user.username
     data = await state.get_data()
     geozone_id = data.get("geozone_id")
 
-    repair_requests = await repair_request_service.get_requests_by_geozone(username, geozone_id)
+    repair_requests = await repair_request_service.get_requests_by_geozone(
+        username=username, 
+        geozone_id=geozone_id
+    )
 
     if not repair_requests:
         await callback_query.message.edit_text(
