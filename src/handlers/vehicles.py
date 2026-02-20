@@ -1,9 +1,12 @@
 # import asyncio
 
-from aiogram import Router, types, F
+from aiogram import Router
+from aiogram import types
+from aiogram import F
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup
 from aiogram.types import LinkPreviewOptions
 
 from src.keyboards.inline import main_menu_keyboard
@@ -12,6 +15,7 @@ from src.services import vehicles_service
 from src.states.states import SearchVehicleStates
 # from src.utils.animation import show_loading_animation
 from src.constants import MANUAL_LOCK_PROTOCOLS
+from src.utils.command_name_builder import get_true_command_name
 
 
 router = Router()
@@ -30,11 +34,17 @@ async def handle_vehicle_selection(
         vehicle_id=vehicle_id
     )
 
+    actual_vehicle_command = await vehicles_service.get_actual_vehicle_command_status(
+        username=username, 
+        vehicle_id=vehicle_id
+    )
+    
     if result:
         kb = vehicle_action_keyboard(
             vehicle_id=vehicle_id, 
             is_locked=result.is_locked,
-            is_manual_lock=True if result.lock_type in MANUAL_LOCK_PROTOCOLS else False
+            is_manual_lock=True if result.lock_type in MANUAL_LOCK_PROTOCOLS else False,
+            actual_command=actual_vehicle_command.command_name
         )
         
         try:
@@ -80,26 +90,50 @@ async def handle_vehicle_action(
     vehicle_id = int(vehicle_id)
     username = callback.from_user.username
 
-    msg = await callback.message.edit_text(
-        "🕐 Выполняется команда...", 
-        reply_markup=None
+    # msg = await callback.message.edit_text(
+    #     "🕐 Выполняется команда...", 
+    #     reply_markup=None
+    # )
+    
+    # command = await vehicles_service.get_actual_vehicle_command_status(
+    #     username=username, 
+    #     vehicle_id=vehicle_id
+    # )
+    
+    # kb_buttons = [
+    #     [
+    #         InlineKeyboardButton(
+    #             text="⏳", 
+    #             callback_data="wait"
+    #         )
+    #     ],
+    # ]
+    
+    vehicle = await vehicles_service.get_vehicle_by_id(
+        username=username, 
+        vehicle_id=vehicle_id
     )
     
-    # animation_task = asyncio.create_task(show_loading_animation(msg, f"Выполняется {action.upper()}"))
+    true_command_name = get_true_command_name(command_name=action, vehicle_type=vehicle.lock_type)
+
+    kb_buttons = [
+        [
+            InlineKeyboardButton(
+                text="Отменить", 
+                callback_data=f"cancel_command:{vehicle_id}:{true_command_name}"
+            )
+        ]
+    ]
 
     await callback.message.edit_text(
         f"⏳ Выполняется команда {action.upper()}...",
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="⏳", 
-                        callback_data="wait"
-                    )
-                ]
+                *kb_buttons
             ]
         )
     )
+    
     if action == "lock":
         vehicle = await vehicles_service.lock_vehicle_with_waiting(
             username=username,
@@ -153,7 +187,8 @@ async def handle_vehicle_action(
         text + "\n\n" + vehicle.to_message() if vehicle else text,
         reply_markup=vehicle_action_keyboard(
             vehicle_id=vehicle_id, 
-            is_locked=vehicle.is_locked
+            is_locked=vehicle.is_locked,
+            is_manual_lock=True if vehicle.lock_type in MANUAL_LOCK_PROTOCOLS else False
         )
     )
     # animation_task.cancel()
@@ -195,14 +230,15 @@ async def handle_vehicle_location(
         )
     )
 
-    kb = vehicle_action_keyboard(
-        vehicle_id=vehicle_id, 
-        is_locked=vehicle.is_locked
-    )
-    await callback.message.answer(
-        "Выберите действие:",
-        reply_markup=kb
-    )
+    # kb = vehicle_action_keyboard(
+    #     vehicle_id=vehicle_id, 
+    #     is_locked=vehicle.is_locked,
+    #     is_manual_lock=True if vehicle.lock_type in MANUAL_LOCK_PROTOCOLS else False
+    # )
+    # await callback.message.answer(
+    #     "Выберите действие:",
+    #     reply_markup=kb
+    # )
 
     await callback.answer()
 
@@ -225,7 +261,11 @@ async def handle_vehicle_by_request(
     else:
         await callback.message.edit_text("Объект не найден.")
 
-    kb = vehicle_action_keyboard(result.id, result.is_locked)
+    kb = vehicle_action_keyboard(
+        result.id, 
+        result.is_locked,
+        is_manual_lock=True if result.lock_type in MANUAL_LOCK_PROTOCOLS else False
+    )
 
     await callback.message.edit_text(
         result.to_message(), 
@@ -271,6 +311,11 @@ async def process_vehicle_code_input(
         username=username, 
         vehicle_code=vehicle_code
     )
+    
+    actual_vehicle_command = await vehicles_service.get_actual_vehicle_command_status(
+        username=username, 
+        vehicle_id=vehicle_info.id
+    )
 
     if vehicle_info == "not found":
         await message.answer(
@@ -285,9 +330,73 @@ async def process_vehicle_code_input(
     else:
         kb = vehicle_action_keyboard(
             vehicle_id=vehicle_info.id, 
-            is_locked=vehicle_info.is_locked
+            is_locked=vehicle_info.is_locked,
+            is_manual_lock=True if vehicle_info.lock_type in MANUAL_LOCK_PROTOCOLS else False,
+            actual_command=actual_vehicle_command.command_name
         )
         await message.answer(
             f"🚗 Карета найдена:\n{vehicle_info.to_message()}",
             reply_markup=kb
         )
+
+@router.callback_query(F.data.startswith('cancel_command:'))
+async def handle_cancel_command(
+    callback: types.CallbackQuery
+):
+    vehicle_id = callback.data.split(":")[1]
+    command_name = callback.data.split(":")[2]
+    
+    username = callback.from_user.username
+
+    command_canceling_result = await vehicles_service.cancel_command(
+        username=username, 
+        vehicle_id=vehicle_id, 
+        command_name=command_name
+    )
+
+    if command_canceling_result:
+        await callback.answer("Команда успешно отменена.")
+    else:
+        await callback.answer("Команда не может быть отменена.")
+    
+    result = await vehicles_service.get_vehicle_by_id(
+        username=username, 
+        vehicle_id=vehicle_id
+    )
+
+    actual_vehicle_command = await vehicles_service.get_actual_vehicle_command_status(
+        username=username, 
+        vehicle_id=vehicle_id
+    )
+    
+    if result:
+        kb = vehicle_action_keyboard(
+            vehicle_id=vehicle_id, 
+            is_locked=result.is_locked,
+            is_manual_lock=True if result.lock_type in MANUAL_LOCK_PROTOCOLS else False,
+            actual_command=actual_vehicle_command.command_name
+        )
+        
+        try:
+            await callback.message.edit_text(
+                text=result.to_message(),
+                reply_markup=kb
+            )
+        except TelegramBadRequest as e:
+            if "message is not modified" in str(e):
+                # Просто игнорируем эту ошибку
+                await callback.answer()
+            else:
+                raise
+        
+        # await callback.message.edit_text(
+        #     result.to_message(),
+        #     reply_markup=kb
+        # )
+    else:
+        await callback.message.edit_text(
+            "Объект не найден.",
+            reply_markup=main_menu_keyboard()
+        )
+
+    await callback.answer()

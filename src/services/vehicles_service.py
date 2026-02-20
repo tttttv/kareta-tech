@@ -3,6 +3,8 @@ import asyncio
 from src.services.api_client import ApiClient
 from src.schemas.vehicle_schemas import VehicleSchema
 from src.schemas.vehicle_schemas import VehicleLockShema
+from src.schemas.vehicle_schemas import VehicleCommandStatusSchema
+from src.schemas.common_schemas import BooleanResponseSchema
 
 
 async def get_vehicles(
@@ -113,15 +115,24 @@ async def unlock_vehicle_with_waiting(
                         return
             await asyncio.sleep(1)
 
-async def get_current_pending_command(
+async def get_actual_vehicle_command_status(
     username,
     vehicle_id
 ):
-    """Получить текущую выполняющуюся команду, если она есть"""
+    """
+    Получить текущую выполняющуюся команду, 
+    если она есть, по ID кареты.
+    """
     
-    # TODO: Сделать реализацию
-    
-    pass
+    async with ApiClient(username) as client:
+        result = await client.get_actual_vehicle_command_status(
+            vehicle_id=vehicle_id
+        )
+        
+        if result:
+            return VehicleCommandStatusSchema(**result)
+        
+        return None
 
 async def beep(
     username, 
@@ -217,3 +228,20 @@ async def get_vehicle_with_location(
         zoom = 16
         url = f"https://yandex.ru/maps/?ll={longitude},{latitude}&pt={longitude},{latitude}&z={zoom}"
         return url, vehicle
+
+async def cancel_command(
+    username, 
+    vehicle_id,
+    command_name
+) -> BooleanResponseSchema | dict | None:
+    """Отменить текущую команду"""
+    
+    async with ApiClient(username) as client:
+        result = await client.cancel_command(vehicle_id, command_name)
+        if result:
+            try:
+                return BooleanResponseSchema(**result)
+            except Exception:
+                return result
+        else:
+            return None

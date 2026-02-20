@@ -138,3 +138,11 @@ class ApiClient:
     async def get_geozone_requests(self, geozone_id):
         path = f'/geozones/{geozone_id}/repair-requests'
         return await self.request("GET", path)
+
+    async def get_actual_vehicle_command_status(self, vehicle_id: int):
+        path = f'/vehicles/{vehicle_id}/active-command'
+        return await self.request("GET", path)
+    
+    async def cancel_command(self, vehicle_id, command_name):
+        path = f'/vehicles/{vehicle_id}/cancel-command'
+        return await self.request("POST", path, data={"command_name": command_name})

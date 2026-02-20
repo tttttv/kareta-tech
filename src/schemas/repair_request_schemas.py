@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from src.schemas.vehicle_schemas import VehicleShortSchema
 
 
-
 class RepairRequestSchema(BaseModel):
     id: int
     status: str

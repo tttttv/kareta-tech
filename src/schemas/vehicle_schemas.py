@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from pydantic import Field
 
 
 class VehicleModelSchema(BaseModel):
@@ -63,3 +64,7 @@ class VehicleShortSchema(BaseModel):
     name: str
     color: str
 
+
+class VehicleCommandStatusSchema(BaseModel):
+    status: bool = Field(..., description="Статус команды")
+    command_name: str | None = Field(default=None, description="Название команды")
