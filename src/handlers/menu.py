@@ -112,6 +112,10 @@ async def menu_vehicles_by_geozone(
             "Выберите, что хотите сделать:",
             reply_markup=main_menu_keyboard()
         )
+        
+        await callback.answer()
+        
+        return
     
     username = callback.from_user.username
 
