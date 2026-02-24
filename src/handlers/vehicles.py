@@ -16,6 +16,7 @@ from src.states.states import SearchVehicleStates
 # from src.utils.animation import show_loading_animation
 from src.constants import MANUAL_LOCK_PROTOCOLS
 from src.utils.command_name_builder import get_true_command_name
+from src.utils.command_name_builder import get_command_name_for_handlers
 
 
 router = Router()
@@ -89,25 +90,37 @@ async def handle_vehicle_action(
     action, vehicle_id = callback.data.split(":")
     vehicle_id = int(vehicle_id)
     username = callback.from_user.username
-
-    # msg = await callback.message.edit_text(
-    #     "🕐 Выполняется команда...", 
-    #     reply_markup=None
-    # )
     
-    # command = await vehicles_service.get_actual_vehicle_command_status(
-    #     username=username, 
-    #     vehicle_id=vehicle_id
-    # )
+    # NOTE: Проверяем, не ожидается ли в данный момент выполнение другой команды,
+    # взыванной другим техником или администратором в админ-панеле.
+    current_pending_command = await vehicles_service.get_actual_vehicle_command_status(
+        username=username, 
+        vehicle_id=vehicle_id
+    )
     
-    # kb_buttons = [
-    #     [
-    #         InlineKeyboardButton(
-    #             text="⏳", 
-    #             callback_data="wait"
-    #         )
-    #     ],
-    # ]
+    if current_pending_command.command_name is not None:
+        await callback.answer("Команда уже выполняется.")
+        
+        kb_buttons = [
+            [
+                InlineKeyboardButton(
+                    text="Отменить", 
+                    callback_data=f"cancel_command:{vehicle_id}:{current_pending_command.command_name}"
+                )
+            ]
+        ]
+        
+        await callback.message.edit_text(
+            f"⏳ Выполняется команда {current_pending_command.command_name.upper()}...",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    *kb_buttons
+                ]
+            )
+        )
+        
+        return
+    
     
     vehicle = await vehicles_service.get_vehicle_by_id(
         username=username, 
