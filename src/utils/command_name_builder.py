@@ -32,3 +32,36 @@ def get_true_command_name(
             return "GET_LOCATION"
     
     return command_name.upper()
+
+def get_command_name_for_handlers(
+    command_name: str
+):
+    """
+    Метод для преобразования названий команд
+    из бэкенда в названия команд для коллбэков.
+    
+    :param command_name: Название команды на бэкенде
+    :type command_name: str
+    :param vehicle_type: Тип кареты
+    :type vehicle_type: str
+    
+    :return: Имя команды в коллбеке
+    :rtype: str
+    """
+    
+    if command_name == "LOCK":
+        return "lock"
+    if command_name == "UNLOCK":
+        return "unlock"
+    if command_name == "SOUND":
+        return "beep"
+    if command_name == "SET_TRACKING_INTERVAL_30":
+        return "set_tracking_interval_30"
+    if command_name == "SET_TRACKING_INTERVAL_60":
+        return "set_tracking_interval_60"
+    if command_name == "GET_LOCATION" or command_name == "LOCATION":
+        return "update_vehicle_location"
+    if command_name == "LOCATION":
+        return "update_vehicle_location"
+    
+    return command_name
