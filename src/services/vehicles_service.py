@@ -34,11 +34,13 @@ async def get_vehicle_by_id(
     async with ApiClient(username) as client:
         obj = await client.get_vehicle_by_id(vehicle_id)
         if obj:
-            try:
-                return VehicleSchema(**obj)
-            except Exception:
-                return obj
+            # try:
+            #     return VehicleSchema(**obj)
+            # except Exception:
+            #     return obj
 
+            return VehicleSchema(**obj)
+            
         return None
 
 async def get_vehicle_by_code(
@@ -50,10 +52,11 @@ async def get_vehicle_by_code(
     async with ApiClient(username) as client:
         obj = await client.get_vehicle_by_code(vehicle_code)
         if obj:
-            try:
-                return VehicleSchema(**obj)
-            except Exception:
-                return obj
+            return VehicleSchema(**obj)
+            # try
+            #     return VehicleSchema(**obj)
+            # except Exception:
+            #     return obj
 
         return None
 

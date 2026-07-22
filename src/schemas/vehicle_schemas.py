@@ -5,7 +5,7 @@ from pydantic import Field
 class VehicleModelSchema(BaseModel):
     name: str
     brand: str
-    seating_capacity: str
+    # seating_capacity: str
 
 
 class GeoZoneSchema(BaseModel):
@@ -38,7 +38,7 @@ class VehicleSchema(BaseModel):
             "🛺  Объект\n\n"
             f"- Имя: {self.name}\n"
             f"- Модель: {self.model.name if self.model else ''}\n"
-            f"- Число мест: {self.model.seating_capacity if self.model else ''}\n"
+            # f"- Число мест: {self.model.seating_capacity if self.model else ''}\n"
             f"- Цвет: ⬛️ {self.color}\n"
             f"- Идентификатор (ID): {self.id}\n\n"
 
