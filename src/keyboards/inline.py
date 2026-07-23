@@ -157,7 +157,7 @@ def vehicle_status_keyboard_without_request(
     buttons = [
         InlineKeyboardButton(
             text=label,
-            callback_data=f"set_vehicle_status_without_request:{vehicle_id}:{veh_status.value}"
+            callback_data=f"svsw:{vehicle_id}:{veh_status.value}"
         ) for veh_status, label in statuses
     ]
     return InlineKeyboardMarkup(inline_keyboard=[[b] for b in buttons] + [MENU_BUTTON])
@@ -172,7 +172,7 @@ def vehicle_status_keyboard(rep_id: int, request_status: VehicleRequestStatus) -
     buttons = [
         InlineKeyboardButton(
             text=label,
-            callback_data=f"set_vehicle_status:{rep_id}:{request_status.value}:{veh_status.value}"
+            callback_data=f"svs:{rep_id}:{request_status.value}:{veh_status.value}"
         ) for veh_status, label in statuses
     ]
     return InlineKeyboardMarkup(inline_keyboard=[[b] for b in buttons] + [MENU_BUTTON])

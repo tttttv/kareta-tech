@@ -97,7 +97,7 @@ async def handle_vehicle_status_change_without_request(
         reply_markup=vehicle_status_keyboard_without_request(vehicle_id)
     )
 
-@router.callback_query(F.data.startswith("set_vehicle_status_without_request:"))
+@router.callback_query(F.data.startswith("svsw:"))
 async def handle_vehicle_status_selection_without_request(
     callback: CallbackQuery
 ):
@@ -125,7 +125,7 @@ async def handle_vehicle_status_selection_without_request(
         )
     )
 
-@router.callback_query(F.data.startswith("set_vehicle_status:"))
+@router.callback_query(F.data.startswith("svs:"))
 async def handle_vehicle_status_selection(
     callback: CallbackQuery
 ):
